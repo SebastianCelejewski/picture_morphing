@@ -116,7 +116,7 @@ public class MainMenu extends JMenuBar {
         int idx = 0;
         DecimalFormat df = new DecimalFormat("000");
         try {
-            for (double phase = 0.0; phase < 1.0; phase += 0.02) {
+            for (double phase = 0.0; phase < 1.0; phase += 1d/30) {
                 String filename = currentFile.getName() + "-export-" + df.format(idx++) + ".jpg";
                 System.out.println(filename);
                 engine.setPhase(phase);
