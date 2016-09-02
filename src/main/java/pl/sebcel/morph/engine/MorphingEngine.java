@@ -80,6 +80,8 @@ public class MorphingEngine {
 
 	private List<int[]> targetTrianglesEdges;
 
+	private List<int[]> currentTrianglesEdges;
+
 	private Map<DTriangle, List<TransformAnchor>> anchorsForTriangles = new HashMap<DTriangle, List<TransformAnchor>>();
 
 	private Map<CacheKey, TriangleToTriangleTransformer> transformers1 = new HashMap<CacheKey, TriangleToTriangleTransformer>();
@@ -87,6 +89,8 @@ public class MorphingEngine {
 	private Map<CacheKey, TriangleToTriangleTransformer> transformers2 = new HashMap<CacheKey, TriangleToTriangleTransformer>();
 
 	private Map<Double, BufferedImage> imagesCache = new HashMap<Double, BufferedImage>();
+	
+	private Map<Double, List<int[]>> trianglesCache = new HashMap<Double, List<int[]>>();
 
 	private double phase;
 
@@ -173,7 +177,7 @@ public class MorphingEngine {
 		case TARGET:
 			return targetTrianglesEdges;
 		default:
-			return null;
+			return currentTrianglesEdges;
 		}
 	}
 
@@ -208,22 +212,47 @@ public class MorphingEngine {
 	private void processImages() {
 		if (project != null) {
 			if (imagesCache.containsKey(phase)) {
-				sourceTransformedImage = imagesCache.get(phase + 1);
-				targetTransformedImage = imagesCache.get(phase + 2);
-				outputImage = imagesCache.get(phase + 3);
+				sourceTransformedImage = imagesCache.get(phase + 2);
+				targetTransformedImage = imagesCache.get(phase + 4);
+				outputImage = imagesCache.get(phase + 6);
+				sourceTrianglesEdges = trianglesCache.get(phase + 2);
+				targetTrianglesEdges = trianglesCache.get(phase + 4);
+				currentTrianglesEdges = trianglesCache.get(phase + 6);
 			} else {
 				triangles = triangulate();
 				sourceTrianglesEdges = calculateSourceTrianglesEdges();
 				targetTrianglesEdges = calculateTargetTrianglesEdges();
+				currentTrianglesEdges = calculateCurrentTrianglesEdges();
 				sourceTransformedImage = transformSourceImage();
 				targetTransformedImage = transformTargetImage();
 				outputImage = blendTransformedImages();
 				imagesCache.put(phase, null);
-				imagesCache.put(phase + 1, sourceTransformedImage);
-				imagesCache.put(phase + 2, targetTransformedImage);
-				imagesCache.put(phase + 3, outputImage);
+				imagesCache.put(phase + 2, sourceTransformedImage);
+				imagesCache.put(phase + 4, targetTransformedImage);
+				imagesCache.put(phase + 6, outputImage);
+				trianglesCache.put(phase + 2, sourceTrianglesEdges);
+				trianglesCache.put(phase + 4, targetTrianglesEdges);
+				trianglesCache.put(phase + 6, currentTrianglesEdges);
 			}
 		}
+	}
+
+	private List<int[]> calculateCurrentTrianglesEdges() {
+		List<int[]> edges = new ArrayList<int[]>();
+		for (DTriangle triangle : triangles) {
+			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
+			int x0 = anchorsForTriangle.get(0).getX(phase);
+			int y0 = anchorsForTriangle.get(0).getY(phase);
+			int x1 = anchorsForTriangle.get(1).getX(phase);
+			int y1 = anchorsForTriangle.get(1).getY(phase);
+			int x2 = anchorsForTriangle.get(2).getX(phase);
+			int y2 = anchorsForTriangle.get(2).getY(phase);
+			
+			edges.add(new int[] { x0, y0, x1, y1 });
+			edges.add(new int[] { x1, y1, x2, y2 });
+			edges.add(new int[] { x2, y2, x0, y0 });
+		}
+		return edges;
 	}
 
 	private BufferedImage transformSourceImage() {
@@ -236,8 +265,8 @@ public class MorphingEngine {
 
 		BufferedImage result = new BufferedImage(width, height, type);
 
-		for (double x = 0; x < width; x += 0.25) {
-			for (double y = 0; y < height; y += 0.25) {
+		for (double x = 0; x < width; x += 0.5) {
+			for (double y = 0; y < height; y += 0.5) {
 				double newX = x;
 				double newY = y;
 				DTriangle triangle = getTriangleForPoint((int) x, (int) y);

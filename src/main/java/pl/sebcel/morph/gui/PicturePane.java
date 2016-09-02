@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -26,6 +27,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 
 	private static final long serialVersionUID = 1L;
 	private JLabel pictureLabel;
+	private JCheckBox showTriangles = new JCheckBox("Show triangles");
 	private static final int scale = 2;
 
 	private Role role;
@@ -48,6 +50,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		this.setLayout(new BorderLayout());
 		pictureLabel = new JLabel("No photo loaded yet");
 		this.add(pictureLabel, BorderLayout.CENTER);
+		this.add(showTriangles, BorderLayout.SOUTH);
 		this.addMouseListener(this);
 		this.addMouseMotionListener(this);
 
@@ -57,6 +60,8 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		if (role == Role.TARGET) {
 			this.phase = 1.0;
 		}
+		
+		showTriangles.addActionListener(e -> { this.repaint();});
 	}
 
 	public void setMainFrame(MainFrame mainFrame) {
@@ -121,7 +126,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 			}
 		}
 
-		if (triangles != null) {
+		if (triangles != null && showTriangles.isSelected()) {
 			g.setColor(Color.blue);
 			for (int[] triangle : triangles) {
 				int x1 = triangle[0] / scale;

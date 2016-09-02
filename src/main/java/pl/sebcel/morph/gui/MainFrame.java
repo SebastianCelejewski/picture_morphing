@@ -35,6 +35,7 @@ public class MainFrame extends JFrame {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		Dimension windowSize = new Dimension(1200, 500);
 		this.setBounds((screenSize.width - windowSize.width) / 2, (screenSize.height - windowSize.height) / 2, windowSize.width, windowSize.height);
+		this.setTitle("Picture Morphing");
 
 		this.addWindowListener(new WindowAdapter() {
 
@@ -64,17 +65,17 @@ public class MainFrame extends JFrame {
 		outputPicturePane.setShowAnchors(false);
 
 		phaseSlider.setMinimum(0);
-		phaseSlider.setMaximum(20);
-		phaseSlider.setValue(10);
+		phaseSlider.setMaximum(8);
+		phaseSlider.setValue(4);
 
 		this.setLayout(new GridBagLayout());
 		this.add(sourcePicturePane, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
 		this.add(targetPicturePane, new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
-		// this.add(sourceTransformPicturePane, new GridBagConstraints(2, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
-		// this.add(targetTransformPicturePane, new GridBagConstraints(3, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
 		this.add(outputPicturePane, new GridBagConstraints(2, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
-		this.add(autoSlider, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
-		this.add(phaseSlider, new GridBagConstraints(1, 1, 2, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(1, 1, 1, 1), 1, 1));
+		this.add(sourceTransformPicturePane, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
+		this.add(targetTransformPicturePane, new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
+		this.add(autoSlider, new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
+		this.add(phaseSlider, new GridBagConstraints(1, 2, 2, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(1, 1, 1, 1), 1, 1));
 
 		phaseSlider.addChangeListener(e -> setSliderPosition(phaseSlider.getValue()));
 		autoSlider.addActionListener(e -> bufferAllFrames());
@@ -123,7 +124,6 @@ public class MainFrame extends JFrame {
 			int endPosition = phaseSlider.getMaximum();
 			for (int i = startPosition; i <= endPosition; i++) {
 				phaseSlider.setValue(i);
-				// setSliderPosition(i);
 			}
 			phaseSlider.setEnabled(true);
 		}).start();
