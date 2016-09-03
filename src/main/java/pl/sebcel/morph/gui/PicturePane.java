@@ -154,7 +154,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 	}
 
 	public void mouseClicked(MouseEvent e) {
-		if (e.getButton() == MouseEvent.BUTTON3) {
+		if (SwingUtilities.isLeftMouseButton(e)) {
 			double x = getReversedX(e.getX());
 			double y = getReversedY(e.getY());
 			TransformAnchor anchor = new TransformAnchor();
@@ -186,7 +186,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 	private int my = 0;
 
 	public void mouseDragged(MouseEvent e) {
-		if (SwingUtilities.isLeftMouseButton(e) && e.isControlDown() && mx != 0 && my != 0) {
+		if (SwingUtilities.isRightMouseButton(e) && mx != 0 && my != 0) {
 			int dx = e.getX() - mx;
 			int dy = e.getY() - my;
 			this.panX += dx / zoom;
@@ -266,19 +266,17 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		if (e.getModifiers() == MouseWheelEvent.CTRL_MASK) {
-			double rotation = e.getPreciseWheelRotation();
-			if (rotation < 0) {
-				if (zoom < 4) {
-					zoom = zoom * 2;
-					this.repaint();
-				}
+		double rotation = e.getPreciseWheelRotation();
+		if (rotation < 0) {
+			if (zoom < 4) {
+				zoom = zoom * 2;
+				this.repaint();
 			}
-			if (rotation > 0) {
-				if (zoom > 0.125) {
-					zoom = zoom / 2;
-					this.repaint();
-				}
+		}
+		if (rotation > 0) {
+			if (zoom > 0.125) {
+				zoom = zoom / 2;
+				this.repaint();
 			}
 		}
 	}
