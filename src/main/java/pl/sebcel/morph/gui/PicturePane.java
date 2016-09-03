@@ -8,6 +8,8 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
@@ -15,11 +17,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import pl.sebcel.morph.engine.MorphingEngine;
 import pl.sebcel.morph.model.TransformAnchor;
 
-public class PicturePane extends JPanel implements MouseListener, MouseMotionListener {
+public class PicturePane extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
 
 	public static enum Role {
 		SOURCE, TARGET, SOURCE_TRANSFORMED, TARGET_TRANSFORMED, OUTPUT
@@ -28,19 +31,21 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 	private static final long serialVersionUID = 1L;
 	private JLabel pictureLabel;
 	private JCheckBox showTriangles = new JCheckBox("Show triangles");
-	private static final int scale = 2;
+	private double zoom = 1;
+	private int panX = 0;
+	private int panY = 0;
 
 	private Role role;
 	private MorphingEngine engine;
 	private MainFrame mainFrame;
 
-	private int mouseX = 0;
-	private int mouseY = 0;
+	private double mouseX = 0;
+	private double mouseY = 0;
 
 	private boolean showAnchors = false;
 
 	private List<TransformAnchor> anchors;
-	private List<int[]> triangles;
+	private List<double[]> triangles;
 	private TransformAnchor selectedAnchor;
 	private double phase;
 
@@ -53,6 +58,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		this.add(showTriangles, BorderLayout.SOUTH);
 		this.addMouseListener(this);
 		this.addMouseMotionListener(this);
+		this.addMouseWheelListener(this);
 
 		if (role == Role.SOURCE) {
 			this.phase = 0.0;
@@ -60,8 +66,10 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		if (role == Role.TARGET) {
 			this.phase = 1.0;
 		}
-		
-		showTriangles.addActionListener(e -> { this.repaint();});
+
+		showTriangles.addActionListener(e -> {
+			this.repaint();
+		});
 	}
 
 	public void setMainFrame(MainFrame mainFrame) {
@@ -86,14 +94,18 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 			BufferedImage image = engine.getImage(role);
 
 			if (image != null) {
-				int width = image.getWidth() / scale;
-				int height = image.getHeight() / scale;
+				int width = getX(image.getWidth());
+				int height = getY(image.getHeight());
 
-				BufferedImage resizedImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+				BufferedImage resizedImg = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
 				Graphics2D g2 = resizedImg.createGraphics();
 
 				g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				g2.drawImage(engine.getImage(role), 0, 0, width, height, null);
+				int x = (int) (panX * zoom);
+				int y = (int) (panY * zoom);
+				int w = (int) (width - panX * zoom);
+				int h = (int) (height - panY * zoom);
+				g2.drawImage(engine.getImage(role), x, y, w, h, null);
 				g2.dispose();
 
 				pictureLabel.setIcon(new ImageIcon(resizedImg));
@@ -115,24 +127,24 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		if (showAnchors && anchors != null) {
 			g.setColor(Color.RED);
 			for (TransformAnchor anchor : anchors) {
-				int x = anchor.getX(phase) / scale;
-				int y = anchor.getY(phase) / scale;
-				g.fillRect(x, y, 2, 2);
+				int x = getX(anchor.getX(phase));
+				int y = getY(anchor.getY(phase));
+				g.fillRect(x - 1, y - 1, 2, 2);
 
 				if (anchor == selectedAnchor) {
 					g.setColor(Color.RED);
-					g.drawArc(selectedAnchor.getX(phase) / scale - 5, selectedAnchor.getY(phase) / scale - 5, 10, 10, 0, 359);
+					g.drawArc(getX(selectedAnchor.getX(phase)) - 5, getY(selectedAnchor.getY(phase)) - 5, 10, 10, 0, 359);
 				}
 			}
 		}
 
 		if (triangles != null && showTriangles.isSelected()) {
 			g.setColor(Color.blue);
-			for (int[] triangle : triangles) {
-				int x1 = triangle[0] / scale;
-				int y1 = triangle[1] / scale;
-				int x2 = triangle[2] / scale;
-				int y2 = triangle[3] / scale;
+			for (double[] triangle : triangles) {
+				int x1 = getX(triangle[0]);
+				int y1 = getY(triangle[1]);
+				int x2 = getX(triangle[2]);
+				int y2 = getY(triangle[3]);
 				g.drawLine(x1, y1, x2, y2);
 			}
 		}
@@ -143,8 +155,8 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 
 	public void mouseClicked(MouseEvent e) {
 		if (e.getButton() == MouseEvent.BUTTON3) {
-			int x = e.getX() * scale;
-			int y = e.getY() * scale;
+			double x = getReversedX(e.getX());
+			double y = getReversedY(e.getY());
 			TransformAnchor anchor = new TransformAnchor();
 			anchor.setOriginalX(x);
 			anchor.setOriginalY(y);
@@ -155,49 +167,59 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 	}
 
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-
 	}
 
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-
 	}
 
 	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		mx = e.getX();
+		my = e.getY();
 	}
 
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		mx = 0;
+		my = 0;
 	}
 
+	private int mx = 0;
+	private int my = 0;
+
 	public void mouseDragged(MouseEvent e) {
-		this.mouseX = e.getX() * scale;
-		this.mouseY = e.getY() * scale;
+		if (SwingUtilities.isLeftMouseButton(e) && e.isControlDown() && mx != 0 && my != 0) {
+			int dx = e.getX() - mx;
+			int dy = e.getY() - my;
+			this.panX += dx / zoom;
+			this.panY += dy / zoom;
+			mx = e.getX();
+			my = e.getY();
 
-		if (selectedAnchor != null) {
-			if (phase == 0.0) {
-				selectedAnchor.setOriginalX(this.mouseX);
-				selectedAnchor.setOriginalY(this.mouseY);
+			this.repaint();
+		} else {
+			this.mouseX = getReversedX(e.getX());
+			this.mouseY = getReversedY(e.getY());
+
+			if (selectedAnchor != null) {
+				if (phase == 0.0) {
+					selectedAnchor.setOriginalX(this.mouseX);
+					selectedAnchor.setOriginalY(this.mouseY);
+				}
+
+				if (phase == 1.0) {
+					selectedAnchor.setTargetX(this.mouseX);
+					selectedAnchor.setTargetY(this.mouseY);
+				}
+
+				engine.anchorMoved();
 			}
 
-			if (phase == 1.0) {
-				selectedAnchor.setTargetX(this.mouseX);
-				selectedAnchor.setTargetY(this.mouseY);
-			}
-			
-			engine.anchorMoved();
+			this.repaint();
 		}
-
-		this.repaint();
 	}
 
 	public void mouseMoved(MouseEvent e) {
-		this.mouseX = e.getX() * scale;
-		this.mouseY = e.getY() * scale;
+		this.mouseX = getReversedX(e.getX());
+		this.mouseY = getReversedY(e.getY());
 		this.repaint();
 		TransformAnchor anchor = findSelectedAnchor();
 		mainFrame.setSelectedAnchor(anchor);
@@ -214,13 +236,50 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		}
 		TransformAnchor selectedAnchor = null;
 		for (TransformAnchor anchor : anchors) {
-			int x = anchor.getX(phase);
-			int y = anchor.getY(phase);
-			double mouseDistance = Math.sqrt((x - mouseX) * (x - mouseX) + (y - mouseY) * (y - mouseY));
+			int x = getX(anchor.getX(phase));
+			int y = getY(anchor.getY(phase));
+			int mx = getX(mouseX);
+			int my = getY(mouseY);
+			double mouseDistance = Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my));
 			if (mouseDistance < 10 && selectedAnchor == null) {
 				selectedAnchor = anchor;
 			}
 		}
 		return selectedAnchor;
+	}
+
+	private int getX(double x) {
+		return (int) ((x + panX) * zoom);
+	}
+
+	private int getY(double y) {
+		return (int) ((y + panY) * zoom);
+	}
+
+	private double getReversedX(int x) {
+		return x / zoom - panX;
+	}
+
+	private double getReversedY(int y) {
+		return y / zoom - panY;
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		if (e.getModifiers() == MouseWheelEvent.CTRL_MASK) {
+			double rotation = e.getPreciseWheelRotation();
+			if (rotation < 0) {
+				if (zoom < 4) {
+					zoom = zoom * 2;
+					this.repaint();
+				}
+			}
+			if (rotation > 0) {
+				if (zoom > 0.125) {
+					zoom = zoom / 2;
+					this.repaint();
+				}
+			}
+		}
 	}
 }

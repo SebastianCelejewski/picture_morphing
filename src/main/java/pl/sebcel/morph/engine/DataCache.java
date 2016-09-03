@@ -62,7 +62,7 @@ public class DataCache {
 
 	private Map<Double, BufferedImage> imagesCache = new HashMap<Double, BufferedImage>();
 
-	private Map<Double, List<int[]>> trianglesCache = new HashMap<Double, List<int[]>>();
+	private Map<Double, List<double[]>> trianglesCache = new HashMap<Double, List<double[]>>();
 
 	public void clearAll() {
 		anchorsForTriangles.clear();
@@ -95,7 +95,7 @@ public class DataCache {
 		imagesCache.put(phase + 6, outputImage);
 	}
 
-	public void putTrianglesForPhase(double phase, List<int[]> sourceTrianglesEdges, List<int[]> targetTrianglesEdges, List<int[]> currentTrianglesEdges) {
+	public void putTrianglesForPhase(double phase, List<double[]> sourceTrianglesEdges, List<double[]> targetTrianglesEdges, List<double[]> currentTrianglesEdges) {
 		trianglesCache.put(phase + 2, sourceTrianglesEdges);
 		trianglesCache.put(phase + 4, targetTrianglesEdges);
 		trianglesCache.put(phase + 6, currentTrianglesEdges);
@@ -113,15 +113,15 @@ public class DataCache {
 		return imagesCache.get(phase + 6);
 	}
 
-	public List<int[]> getSourceTrianglesForPhase(double phase) {
+	public List<double[]> getSourceTrianglesForPhase(double phase) {
 		return trianglesCache.get(phase + 2);
 	}
 
-	public List<int[]> getTargetTrianglesForPhase(double phase) {
+	public List<double[]> getTargetTrianglesForPhase(double phase) {
 		return trianglesCache.get(phase + 4);
 	}
 
-	public List<int[]> getCurrentTrianglesForPhase(double phase) {
+	public List<double[]> getCurrentTrianglesForPhase(double phase) {
 		return trianglesCache.get(phase + 6);
 	}
 

@@ -5,41 +5,41 @@ import javax.xml.bind.annotation.XmlElement;
 public class TransformAnchor {
 
     @XmlElement
-    private int originalX;
+    private double originalX;
     
     @XmlElement
-    private int originalY;
+    private double originalY;
 
     @XmlElement
-    private int targetX;
+    private double targetX;
     
     @XmlElement
-    private int targetY;
+    private double targetY;
 
-    public void setOriginalX(int originalX) {
+    public void setOriginalX(double originalX) {
         this.originalX = originalX;
     }
 
-    public void setOriginalY(int originalY) {
+    public void setOriginalY(double originalY) {
         this.originalY = originalY;
     }
 
-    public void setTargetX(int targetX) {
+    public void setTargetX(double targetX) {
         this.targetX = targetX;
     }
 
-    public void setTargetY(int targetY) {
+    public void setTargetY(double targetY) {
         this.targetY = targetY;
     }
 
-    public int getX(double phase) {
-        int span = targetX - originalX;
-        return this.originalX + (int) (span * phase);
+    public double getX(double phase) {
+    	double span = targetX - originalX;
+        return this.originalX + span * phase;
     }
 
-    public int getY(double phase) {
-        int span = targetY - originalY;
-        return this.originalY + (int) (span * phase);
+    public double getY(double phase) {
+    	double span = targetY - originalY;
+        return this.originalY + span * phase;
     }
 
 }

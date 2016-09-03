@@ -58,11 +58,11 @@ public class MorphingEngine {
 
 	private List<DTriangle> triangles;
 
-	private List<int[]> sourceTrianglesEdges;
+	private List<double[]> sourceTrianglesEdges;
 
-	private List<int[]> targetTrianglesEdges;
+	private List<double[]> targetTrianglesEdges;
 
-	private List<int[]> currentTrianglesEdges;
+	private List<double[]> currentTrianglesEdges;
 
 	private DataCache dataCache = new DataCache();
 
@@ -143,7 +143,7 @@ public class MorphingEngine {
 		throw new RuntimeException("Invalid role: " + role);
 	}
 
-	public List<int[]> getTriangles(PicturePane.Role role) {
+	public List<double[]> getTriangles(PicturePane.Role role) {
 		switch (role) {
 		case SOURCE:
 			return sourceTrianglesEdges;
@@ -206,20 +206,20 @@ public class MorphingEngine {
 		}
 	}
 
-	private List<int[]> calculateCurrentTrianglesEdges() {
-		List<int[]> edges = new ArrayList<int[]>();
+	private List<double[]> calculateCurrentTrianglesEdges() {
+		List<double[]> edges = new ArrayList<double[]>();
 		for (DTriangle triangle : triangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
-			int x0 = anchorsForTriangle.get(0).getX(phase);
-			int y0 = anchorsForTriangle.get(0).getY(phase);
-			int x1 = anchorsForTriangle.get(1).getX(phase);
-			int y1 = anchorsForTriangle.get(1).getY(phase);
-			int x2 = anchorsForTriangle.get(2).getX(phase);
-			int y2 = anchorsForTriangle.get(2).getY(phase);
+			double x0 = anchorsForTriangle.get(0).getX(phase);
+			double y0 = anchorsForTriangle.get(0).getY(phase);
+			double x1 = anchorsForTriangle.get(1).getX(phase);
+			double y1 = anchorsForTriangle.get(1).getY(phase);
+			double x2 = anchorsForTriangle.get(2).getX(phase);
+			double y2 = anchorsForTriangle.get(2).getY(phase);
 
-			edges.add(new int[] { x0, y0, x1, y1 });
-			edges.add(new int[] { x1, y1, x2, y2 });
-			edges.add(new int[] { x2, y2, x0, y0 });
+			edges.add(new double[] { x0, y0, x1, y1 });
+			edges.add(new double[] { x1, y1, x2, y2 });
+			edges.add(new double[] { x2, y2, x0, y0 });
 		}
 		return edges;
 	}
@@ -280,8 +280,10 @@ public class MorphingEngine {
 
 		BufferedImage result = new BufferedImage(width, height, type);
 
-		for (double x = 0; x < width; x += 1) {
-			for (double y = 0; y < height; y += 1) {
+		double delta = quality.getDelta();
+		
+		for (double x = 0; x < width; x += delta) {
+			for (double y = 0; y < height; y += delta) {
 				double newX = x;
 				double newY = y;
 				DTriangle triangle = getTriangleForPoint((int) x, (int) y);
@@ -312,7 +314,6 @@ public class MorphingEngine {
 				} catch (Exception ex) {
 					// System.out.println(x+","+y+" -> "+newX+","+newY+" width: "+width+", height: "+height);
 				}
-
 			}
 		}
 
@@ -365,8 +366,8 @@ public class MorphingEngine {
 		try {
 			ConstrainedMesh mesh = new ConstrainedMesh();
 			for (TransformAnchor anchor : project.getAnchors()) {
-				int x = anchor.getX(0);
-				int y = anchor.getY(0);
+				double x = anchor.getX(0);
+				double y = anchor.getY(0);
 				DPoint point = new DPoint(x, y, 0);
 				mesh.addPoint(point);
 			}
@@ -378,36 +379,36 @@ public class MorphingEngine {
 		}
 	}
 
-	private List<int[]> calculateSourceTrianglesEdges() {
-		List<int[]> edges = new ArrayList<int[]>();
+	private List<double[]> calculateSourceTrianglesEdges() {
+		List<double[]> edges = new ArrayList<double[]>();
 		for (DTriangle triangle : triangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
-			int x0 = anchorsForTriangle.get(0).getX(0d);
-			int y0 = anchorsForTriangle.get(0).getY(0d);
-			int x1 = anchorsForTriangle.get(1).getX(0d);
-			int y1 = anchorsForTriangle.get(1).getY(0d);
-			int x2 = anchorsForTriangle.get(2).getX(0d);
-			int y2 = anchorsForTriangle.get(2).getY(0d);
-			edges.add(new int[] { x0, y0, x1, y1 });
-			edges.add(new int[] { x1, y1, x2, y2 });
-			edges.add(new int[] { x2, y2, x0, y0 });
+			double x0 = anchorsForTriangle.get(0).getX(0d);
+			double y0 = anchorsForTriangle.get(0).getY(0d);
+			double x1 = anchorsForTriangle.get(1).getX(0d);
+			double y1 = anchorsForTriangle.get(1).getY(0d);
+			double x2 = anchorsForTriangle.get(2).getX(0d);
+			double y2 = anchorsForTriangle.get(2).getY(0d);
+			edges.add(new double[] { x0, y0, x1, y1 });
+			edges.add(new double[] { x1, y1, x2, y2 });
+			edges.add(new double[] { x2, y2, x0, y0 });
 		}
 		return edges;
 	}
 
-	private List<int[]> calculateTargetTrianglesEdges() {
-		List<int[]> edges = new ArrayList<int[]>();
+	private List<double[]> calculateTargetTrianglesEdges() {
+		List<double[]> edges = new ArrayList<double[]>();
 		for (DTriangle triangle : triangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
-			int x0 = anchorsForTriangle.get(0).getX(1d);
-			int y0 = anchorsForTriangle.get(0).getY(1d);
-			int x1 = anchorsForTriangle.get(1).getX(1d);
-			int y1 = anchorsForTriangle.get(1).getY(1d);
-			int x2 = anchorsForTriangle.get(2).getX(1d);
-			int y2 = anchorsForTriangle.get(2).getY(1d);
-			edges.add(new int[] { x0, y0, x1, y1 });
-			edges.add(new int[] { x1, y1, x2, y2 });
-			edges.add(new int[] { x2, y2, x0, y0 });
+			double x0 = anchorsForTriangle.get(0).getX(1d);
+			double y0 = anchorsForTriangle.get(0).getY(1d);
+			double x1 = anchorsForTriangle.get(1).getX(1d);
+			double y1 = anchorsForTriangle.get(1).getY(1d);
+			double x2 = anchorsForTriangle.get(2).getX(1d);
+			double y2 = anchorsForTriangle.get(2).getY(1d);
+			edges.add(new double[] { x0, y0, x1, y1 });
+			edges.add(new double[] { x1, y1, x2, y2 });
+			edges.add(new double[] { x2, y2, x0, y0 });
 		}
 		return edges;
 	}
