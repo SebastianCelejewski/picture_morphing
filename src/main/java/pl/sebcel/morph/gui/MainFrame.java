@@ -8,9 +8,7 @@ import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JSlider;
 
 import pl.sebcel.morph.engine.MorphingEngine;
 import pl.sebcel.morph.gui.PicturePane.Role;
@@ -26,8 +24,7 @@ public class MainFrame extends JFrame {
 	private PicturePane targetTransformPicturePane;
 	private PicturePane outputPicturePane;
 
-	private JSlider phaseSlider = new JSlider(JSlider.HORIZONTAL);
-	private JButton autoSlider = new JButton("Buffer");
+	private RenderingControlsPanel renderingControlsPanel = new RenderingControlsPanel();
 
 	private MorphingEngine engine;
 
@@ -64,21 +61,14 @@ public class MainFrame extends JFrame {
 		targetTransformPicturePane.setShowAnchors(false);
 		outputPicturePane.setShowAnchors(false);
 
-		phaseSlider.setMinimum(0);
-		phaseSlider.setMaximum(8);
-		phaseSlider.setValue(4);
-
 		this.setLayout(new GridBagLayout());
 		this.add(sourcePicturePane, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
 		this.add(targetPicturePane, new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
 		this.add(outputPicturePane, new GridBagConstraints(2, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
 		this.add(sourceTransformPicturePane, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
 		this.add(targetTransformPicturePane, new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
-		this.add(autoSlider, new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(1, 1, 1, 1), 1, 1));
-		this.add(phaseSlider, new GridBagConstraints(1, 2, 2, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(1, 1, 1, 1), 1, 1));
+		this.add(renderingControlsPanel, new GridBagConstraints(0, 2, 5, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(1, 1, 1, 1), 1, 1));
 
-		phaseSlider.addChangeListener(e -> setSliderPosition(phaseSlider.getValue()));
-		autoSlider.addActionListener(e -> bufferAllFrames());
 	}
 
 	public void setMainMenu(MainMenu mainMenu) {
@@ -92,6 +82,7 @@ public class MainFrame extends JFrame {
 		this.sourceTransformPicturePane.setMorphingEngine(engine);
 		this.targetTransformPicturePane.setMorphingEngine(engine);
 		this.outputPicturePane.setMorphingEngine(engine);
+		this.renderingControlsPanel.setMorphingEngine(engine);
 	}
 
 	@Override
@@ -110,22 +101,5 @@ public class MainFrame extends JFrame {
 		sourceTransformPicturePane.selectAnchor(anchor);
 		targetTransformPicturePane.selectAnchor(anchor);
 		outputPicturePane.selectAnchor(anchor);
-	}
-
-	private void setSliderPosition(int sliderValue) {
-		double phase = (double) sliderValue / phaseSlider.getMaximum();
-		engine.setPhase(phase);
-	}
-
-	private void bufferAllFrames() {
-		new Thread(() -> {
-			phaseSlider.setEnabled(false);
-			int startPosition = phaseSlider.getMinimum();
-			int endPosition = phaseSlider.getMaximum();
-			for (int i = startPosition; i <= endPosition; i++) {
-				phaseSlider.setValue(i);
-			}
-			phaseSlider.setEnabled(true);
-		}).start();
 	}
 }
