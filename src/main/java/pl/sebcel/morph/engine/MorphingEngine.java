@@ -89,7 +89,7 @@ public class MorphingEngine {
 	private Map<CacheKey, TriangleToTriangleTransformer> transformers2 = new HashMap<CacheKey, TriangleToTriangleTransformer>();
 
 	private Map<Double, BufferedImage> imagesCache = new HashMap<Double, BufferedImage>();
-	
+
 	private Map<Double, List<int[]>> trianglesCache = new HashMap<Double, List<int[]>>();
 
 	private double phase;
@@ -207,6 +207,15 @@ public class MorphingEngine {
 		transformers2.clear();
 		anchorsForTriangles.clear();
 		imagesCache.clear();
+		trianglesCache.clear();
+	}
+
+	public void anchorMoved() {
+		transformers1.clear();
+		transformers2.clear();
+		anchorsForTriangles.clear();
+		imagesCache.clear();
+		trianglesCache.clear();
 	}
 
 	private void processImages() {
@@ -247,7 +256,7 @@ public class MorphingEngine {
 			int y1 = anchorsForTriangle.get(1).getY(phase);
 			int x2 = anchorsForTriangle.get(2).getX(phase);
 			int y2 = anchorsForTriangle.get(2).getY(phase);
-			
+
 			edges.add(new int[] { x0, y0, x1, y1 });
 			edges.add(new int[] { x1, y1, x2, y2 });
 			edges.add(new int[] { x2, y2, x0, y0 });

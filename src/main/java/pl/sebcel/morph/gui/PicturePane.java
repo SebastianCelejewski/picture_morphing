@@ -188,6 +188,8 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 				selectedAnchor.setTargetX(this.mouseX);
 				selectedAnchor.setTargetY(this.mouseY);
 			}
+			
+			engine.anchorMoved();
 		}
 
 		this.repaint();
