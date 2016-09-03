@@ -52,13 +52,18 @@ public class RenderingControlsPanel extends JPanel {
 		phaseSlider.setMaximum(6);
 		phaseSlider.setValue(3);
 
-		phaseSlider.addChangeListener(e -> setSliderPosition(phaseSlider.getValue()));
+		phaseSlider.addChangeListener(e -> setPhaseSliderPosition(phaseSlider.getValue()));
+		qualitySlider.addChangeListener(e -> setQualitySliderPosition(qualitySlider.getValue()));
 		precalculateButton.addActionListener(e -> bufferAllFrames());
 	}
 
-	private void setSliderPosition(int sliderValue) {
+	private void setPhaseSliderPosition(int sliderValue) {
 		double phase = (double) sliderValue / phaseSlider.getMaximum();
 		morphingEngine.setPhase(phase);
+	}
+	
+	private void setQualitySliderPosition(int sliderValue) {
+		morphingEngine.setQuality(sliderValue);
 	}
 
 	private void bufferAllFrames() {

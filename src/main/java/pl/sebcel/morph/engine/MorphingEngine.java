@@ -4,9 +4,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -23,7 +21,31 @@ import pl.sebcel.morph.model.TriangleToTriangleTransformer;
 
 public class MorphingEngine {
 
-	
+	public enum Quality {
+		LOW(0, 1.0), MEDIUM(1, 0.5), HIGH(2, 0.25);
+
+		private int idx;
+		private double delta;
+
+		Quality(int idx, double delta) {
+			this.idx = idx;
+			this.delta = delta;
+		}
+
+		public static Quality fromIdx(int idx) {
+			for (Quality value : Quality.values()) {
+				if (value.idx == idx) {
+					return value;
+				}
+			}
+			throw new IllegalArgumentException("Invalid idx: " + idx);
+		}
+
+		public double getDelta() {
+			return delta;
+		}
+	}
+
 	private BufferedImage sourceImage;
 
 	private BufferedImage targetImage;
@@ -46,6 +68,8 @@ public class MorphingEngine {
 
 	private double phase;
 
+	private Quality quality = Quality.LOW;
+
 	private MainFrame mainFrame;
 
 	private TransformData project;
@@ -65,7 +89,7 @@ public class MorphingEngine {
 		}
 
 		dataCache.clearAll();
-		
+
 		setPhase(0.5);
 	}
 
@@ -210,8 +234,10 @@ public class MorphingEngine {
 
 		BufferedImage result = new BufferedImage(width, height, type);
 
-		for (double x = 0; x < width; x += 0.5) {
-			for (double y = 0; y < height; y += 0.5) {
+		double delta = quality.getDelta();
+
+		for (double x = 0; x < width; x += delta) {
+			for (double y = 0; y < height; y += delta) {
 				double newX = x;
 				double newY = y;
 				DTriangle triangle = getTriangleForPoint((int) x, (int) y);
@@ -477,5 +503,10 @@ public class MorphingEngine {
 
 	public TransformData getProject() {
 		return project;
+	}
+
+	public void setQuality(int sliderValue) {
+		quality = Quality.fromIdx(sliderValue);
+		dataCache.clearAll();
 	}
 }
