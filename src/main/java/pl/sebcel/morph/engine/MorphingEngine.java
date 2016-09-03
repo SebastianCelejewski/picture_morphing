@@ -14,6 +14,7 @@ import org.jdelaunay.delaunay.ConstrainedMesh;
 import org.jdelaunay.delaunay.geometries.DPoint;
 import org.jdelaunay.delaunay.geometries.DTriangle;
 
+import pl.sebcel.morph.engine.DataCache.CacheKey;
 import pl.sebcel.morph.gui.MainFrame;
 import pl.sebcel.morph.gui.PicturePane;
 import pl.sebcel.morph.model.TransformAnchor;
@@ -22,48 +23,7 @@ import pl.sebcel.morph.model.TriangleToTriangleTransformer;
 
 public class MorphingEngine {
 
-	private static class CacheKey {
-		private DTriangle triangle;
-		private Double phase;
-
-		public CacheKey(DTriangle triangle, Double phase) {
-			this.triangle = triangle;
-			this.phase = phase;
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + ((phase == null) ? 0 : phase.hashCode());
-			result = prime * result + ((triangle == null) ? 0 : triangle.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			CacheKey other = (CacheKey) obj;
-			if (phase == null) {
-				if (other.phase != null)
-					return false;
-			} else if (!phase.equals(other.phase))
-				return false;
-			if (triangle == null) {
-				if (other.triangle != null)
-					return false;
-			} else if (!triangle.equals(other.triangle))
-				return false;
-			return true;
-		}
-
-	}
-
+	
 	private BufferedImage sourceImage;
 
 	private BufferedImage targetImage;
@@ -82,15 +42,7 @@ public class MorphingEngine {
 
 	private List<int[]> currentTrianglesEdges;
 
-	private Map<DTriangle, List<TransformAnchor>> anchorsForTriangles = new HashMap<DTriangle, List<TransformAnchor>>();
-
-	private Map<CacheKey, TriangleToTriangleTransformer> transformers1 = new HashMap<CacheKey, TriangleToTriangleTransformer>();
-
-	private Map<CacheKey, TriangleToTriangleTransformer> transformers2 = new HashMap<CacheKey, TriangleToTriangleTransformer>();
-
-	private Map<Double, BufferedImage> imagesCache = new HashMap<Double, BufferedImage>();
-
-	private Map<Double, List<int[]>> trianglesCache = new HashMap<Double, List<int[]>>();
+	private DataCache dataCache = new DataCache();
 
 	private double phase;
 
@@ -112,11 +64,8 @@ public class MorphingEngine {
 			outputImage = null;
 		}
 
-		transformers1.clear();
-		transformers2.clear();
-		anchorsForTriangles.clear();
-		imagesCache.clear();
-
+		dataCache.clearAll();
+		
 		setPhase(0.5);
 	}
 
@@ -203,30 +152,22 @@ public class MorphingEngine {
 		project.getAnchors().add(anchor);
 		mainFrame.repaint();
 
-		transformers1.clear();
-		transformers2.clear();
-		anchorsForTriangles.clear();
-		imagesCache.clear();
-		trianglesCache.clear();
+		dataCache.clearAll();
 	}
 
 	public void anchorMoved() {
-		transformers1.clear();
-		transformers2.clear();
-		anchorsForTriangles.clear();
-		imagesCache.clear();
-		trianglesCache.clear();
+		dataCache.clearAll();
 	}
 
 	private void processImages() {
 		if (project != null) {
-			if (imagesCache.containsKey(phase)) {
-				sourceTransformedImage = imagesCache.get(phase + 2);
-				targetTransformedImage = imagesCache.get(phase + 4);
-				outputImage = imagesCache.get(phase + 6);
-				sourceTrianglesEdges = trianglesCache.get(phase + 2);
-				targetTrianglesEdges = trianglesCache.get(phase + 4);
-				currentTrianglesEdges = trianglesCache.get(phase + 6);
+			if (dataCache.containsImagesForPhase(phase)) {
+				sourceTransformedImage = dataCache.getSourceTransformedImageForPhase(phase);
+				targetTransformedImage = dataCache.getTargetTransformedImageForPhase(phase);
+				outputImage = dataCache.getOutputTransformedImageForPhase(phase);
+				sourceTrianglesEdges = dataCache.getSourceTrianglesForPhase(phase);
+				targetTrianglesEdges = dataCache.getTargetTrianglesForPhase(phase);
+				currentTrianglesEdges = dataCache.getCurrentTrianglesForPhase(phase);
 			} else {
 				triangles = triangulate();
 				sourceTrianglesEdges = calculateSourceTrianglesEdges();
@@ -235,13 +176,8 @@ public class MorphingEngine {
 				sourceTransformedImage = transformSourceImage();
 				targetTransformedImage = transformTargetImage();
 				outputImage = blendTransformedImages();
-				imagesCache.put(phase, null);
-				imagesCache.put(phase + 2, sourceTransformedImage);
-				imagesCache.put(phase + 4, targetTransformedImage);
-				imagesCache.put(phase + 6, outputImage);
-				trianglesCache.put(phase + 2, sourceTrianglesEdges);
-				trianglesCache.put(phase + 4, targetTrianglesEdges);
-				trianglesCache.put(phase + 6, currentTrianglesEdges);
+				dataCache.putImagesForPhase(phase, sourceTransformedImage, targetTransformedImage, outputImage);
+				dataCache.putTrianglesForPhase(phase, sourceTrianglesEdges, targetTrianglesEdges, currentTrianglesEdges);
 			}
 		}
 	}
@@ -453,7 +389,7 @@ public class MorphingEngine {
 	private TriangleToTriangleTransformer getTransformer1ForTriangle(DTriangle triangle, List<TransformAnchor> anchorsForTriangle, double phase) {
 		try {
 			CacheKey key = new CacheKey(triangle, phase);
-			if (!transformers1.containsKey(key)) {
+			if (!dataCache.containsSourceImageTransformers(key)) {
 				DPoint t1p1 = new DPoint(anchorsForTriangle.get(0).getX(0.0), anchorsForTriangle.get(0).getY(0.0), 0);
 				DPoint t1p2 = new DPoint(anchorsForTriangle.get(1).getX(0.0), anchorsForTriangle.get(1).getY(0.0), 0);
 				DPoint t1p3 = new DPoint(anchorsForTriangle.get(2).getX(0.0), anchorsForTriangle.get(2).getY(0.0), 0);
@@ -466,10 +402,10 @@ public class MorphingEngine {
 				DTriangle t2 = new DTriangle(t2p1, t2p2, t2p3);
 
 				TriangleToTriangleTransformer transformer = new TriangleToTriangleTransformer(t1, t2);
-				transformers1.put(key, transformer);
+				dataCache.putsSourceImageTransformers(key, transformer);
 			}
 
-			return transformers1.get(key);
+			return dataCache.getSourceImageTransformers(key);
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
@@ -478,7 +414,7 @@ public class MorphingEngine {
 	private TriangleToTriangleTransformer getTransformer2ForTriangle(DTriangle triangle, List<TransformAnchor> anchorsForTriangle, double phase) {
 		try {
 			CacheKey key = new CacheKey(triangle, phase);
-			if (!transformers2.containsKey(key)) {
+			if (!dataCache.containsTargetImageTransformers(key)) {
 				DPoint t1p1 = new DPoint(anchorsForTriangle.get(0).getX(0.0), anchorsForTriangle.get(0).getY(0.0), 0);
 				DPoint t1p2 = new DPoint(anchorsForTriangle.get(1).getX(0.0), anchorsForTriangle.get(1).getY(0.0), 0);
 				DPoint t1p3 = new DPoint(anchorsForTriangle.get(2).getX(0.0), anchorsForTriangle.get(2).getY(0.0), 0);
@@ -491,10 +427,10 @@ public class MorphingEngine {
 				DTriangle t2 = new DTriangle(t2p1, t2p2, t2p3);
 
 				TriangleToTriangleTransformer transformer = new TriangleToTriangleTransformer(t1, t2);
-				transformers2.put(key, transformer);
+				dataCache.putsTargetImageTransformers(key, transformer);
 			}
 
-			return transformers2.get(key);
+			return dataCache.getTargetImageTransformers(key);
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
@@ -519,7 +455,7 @@ public class MorphingEngine {
 	}
 
 	private List<TransformAnchor> getAnchorsForTriangle(DTriangle triangle) {
-		if (!anchorsForTriangles.containsKey(triangle)) {
+		if (!dataCache.containsAnchorsForTriangle(triangle)) {
 			List<TransformAnchor> anchorsForTriangle = new ArrayList<TransformAnchor>();
 			if (triangle != null) {
 				for (DPoint point : triangle.getPoints()) {
@@ -533,15 +469,13 @@ public class MorphingEngine {
 					}
 				}
 			}
-			anchorsForTriangles.put(triangle, anchorsForTriangle);
-
+			dataCache.putAnchorsForTriangle(triangle, anchorsForTriangle);
 		}
 
-		return anchorsForTriangles.get(triangle);
+		return dataCache.getAnchorsForTriangle(triangle);
 	}
 
 	public TransformData getProject() {
 		return project;
 	}
-
 }
