@@ -95,11 +95,11 @@ public class MainFrame extends JFrame {
 		this.outputPicturePane.repaint();
 	}
 
-	public void setSelectedAnchor(TransformAnchor anchor) {
-		sourcePicturePane.selectAnchor(anchor);
-		targetPicturePane.selectAnchor(anchor);
-		sourceTransformPicturePane.selectAnchor(anchor);
-		targetTransformPicturePane.selectAnchor(anchor);
-		outputPicturePane.selectAnchor(anchor);
+	public void setHighlightedAnchor(TransformAnchor anchor) {
+		sourcePicturePane.highlightAnchor(anchor);
+		targetPicturePane.highlightAnchor(anchor);
+		sourceTransformPicturePane.highlightAnchor(anchor);
+		targetTransformPicturePane.highlightAnchor(anchor);
+		outputPicturePane.highlightAnchor(anchor);
 	}
 }

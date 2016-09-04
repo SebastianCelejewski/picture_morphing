@@ -12,32 +12,32 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TransformData {
 
-    @XmlElement
-    private String sourceImagePath;
+	@XmlElement
+	private String sourceImagePath;
 
-    @XmlElement
-    private String targetImagePath;
+	@XmlElement
+	private String targetImagePath;
 
-    @XmlElement
-    private List<TransformAnchor> anchors = new ArrayList<TransformAnchor>();
+	@XmlElement
+	private List<TransformAnchor> anchors = new ArrayList<TransformAnchor>();
 
-    public String getSourceImagePath() {
-        return sourceImagePath;
-    }
+	public String getSourceImagePath() {
+		return sourceImagePath;
+	}
 
-    public void setSourceImagePath(String sourceImagePath) {
-        this.sourceImagePath = sourceImagePath;
-    }
+	public void setSourceImagePath(String sourceImagePath) {
+		this.sourceImagePath = sourceImagePath;
+	}
 
-    public String getTargetImagePath() {
-        return targetImagePath;
-    }
+	public String getTargetImagePath() {
+		return targetImagePath;
+	}
 
-    public void setTargetImagePath(String targetImagePath) {
-        this.targetImagePath = targetImagePath;
-    }
+	public void setTargetImagePath(String targetImagePath) {
+		this.targetImagePath = targetImagePath;
+	}
 
-    public List<TransformAnchor> getAnchors() {
-        return anchors;
-    }
+	public List<TransformAnchor> getAnchors() {
+		return anchors;
+	}
 }

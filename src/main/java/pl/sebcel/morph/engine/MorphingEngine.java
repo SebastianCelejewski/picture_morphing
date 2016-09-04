@@ -56,7 +56,9 @@ public class MorphingEngine {
 
 	private BufferedImage outputImage;
 
-	private List<DTriangle> triangles;
+	private List<DTriangle> sourceTriangles;
+
+	private List<DTriangle> targetTriangles;
 
 	private List<double[]> sourceTrianglesEdges;
 
@@ -73,6 +75,8 @@ public class MorphingEngine {
 	private MainFrame mainFrame;
 
 	private TransformData project;
+
+	private TransformAnchor selectedAnchor;
 
 	public void setProject(TransformData project) {
 		this.project = project;
@@ -193,7 +197,8 @@ public class MorphingEngine {
 				targetTrianglesEdges = dataCache.getTargetTrianglesForPhase(phase);
 				currentTrianglesEdges = dataCache.getCurrentTrianglesForPhase(phase);
 			} else {
-				triangles = triangulate();
+				sourceTriangles = triangulate();
+				targetTriangles = calculateTargetTriangles();
 				sourceTrianglesEdges = calculateSourceTrianglesEdges();
 				targetTrianglesEdges = calculateTargetTrianglesEdges();
 				currentTrianglesEdges = calculateCurrentTrianglesEdges();
@@ -206,9 +211,29 @@ public class MorphingEngine {
 		}
 	}
 
+	private List<DTriangle> calculateTargetTriangles() {
+		try {
+			List<DTriangle> result = new ArrayList<>();
+			for (DTriangle sourceTriangle : sourceTriangles) {
+				List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(sourceTriangle);
+				double x0 = anchorsForTriangle.get(0).getX(1.0);
+				double y0 = anchorsForTriangle.get(0).getY(1.0);
+				double x1 = anchorsForTriangle.get(1).getX(1.0);
+				double y1 = anchorsForTriangle.get(1).getY(1.0);
+				double x2 = anchorsForTriangle.get(2).getX(1.0);
+				double y2 = anchorsForTriangle.get(2).getY(1.0);
+				DTriangle targetTriangle = new DTriangle(new DPoint(x0, y0, 0), new DPoint(x1, y1, 0), new DPoint(x2, y2, 0));
+				result.add(targetTriangle);
+			}
+			return result;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to calculate target triangles from source triangles: " + ex.getMessage(), ex);
+		}
+	}
+
 	private List<double[]> calculateCurrentTrianglesEdges() {
 		List<double[]> edges = new ArrayList<double[]>();
-		for (DTriangle triangle : triangles) {
+		for (DTriangle triangle : sourceTriangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
 			double x0 = anchorsForTriangle.get(0).getX(phase);
 			double y0 = anchorsForTriangle.get(0).getY(phase);
@@ -240,7 +265,7 @@ public class MorphingEngine {
 			for (double y = 0; y < height; y += delta) {
 				double newX = x;
 				double newY = y;
-				DTriangle triangle = getTriangleForPoint((int) x, (int) y);
+				DTriangle triangle = getSourceTriangleForPoint(x, y);
 
 				if (triangle != null) {
 					List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
@@ -281,16 +306,48 @@ public class MorphingEngine {
 		BufferedImage result = new BufferedImage(width, height, type);
 
 		double delta = quality.getDelta();
-		
+
+		if (selectedAnchor != null && 1 == 2) {
+			double sx = selectedAnchor.getX(0);
+			double sy = selectedAnchor.getY(0);
+
+			double cx = selectedAnchor.getX(phase);
+			double cy = selectedAnchor.getY(phase);
+
+			double dx = selectedAnchor.getX(1);
+			double dy = selectedAnchor.getY(1);
+
+			System.out.print(phase + "," + sx + "," + sy + "," + cx + "," + cy + "," + dx + "," + dy);
+
+			try {
+				DPoint point = new DPoint(sx, sy, 0);
+				for (DTriangle triangle : targetTriangles) {
+					if (triangle.isInside(point)) {
+						List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
+						TriangleToTriangleTransformer transformer = getTransformer2ForTriangle(triangle, anchorsForTriangle, phase);
+						int newsx = (int) transformer.transformX(sx, sy);
+						int newsy = (int) transformer.transformY(sx, sy);
+						System.out.print("," + newsx + "," + newsy);
+					}
+				}
+			} catch (Exception ex) {
+				throw new RuntimeException(ex);
+			}
+			System.out.println();
+		}
+
 		for (double x = 0; x < width; x += delta) {
 			for (double y = 0; y < height; y += delta) {
 				double newX = x;
 				double newY = y;
-				DTriangle triangle = getTriangleForPoint((int) x, (int) y);
+				DTriangle triangle = getTargetTriangleForPoint(x, y);
 
 				if (triangle != null) {
-					List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
-					TriangleToTriangleTransformer transformer = getTransformer2ForTriangle(triangle, anchorsForTriangle, 1 - phase);
+					List<TransformAnchor> anchorsForTriangle = getAnchorsForTargetTriangle(triangle);
+					if (anchorsForTriangle.size() != 3) {
+						System.out.println("Warining: Found only " + anchorsForTriangle.size() + " anchors for a triangle.");
+					}
+					TriangleToTriangleTransformer transformer = getTransformer2ForTriangle(triangle, anchorsForTriangle, phase);
 					newX = (int) transformer.transformX(x, y);
 					newY = (int) transformer.transformY(x, y);
 				}
@@ -309,8 +366,10 @@ public class MorphingEngine {
 				}
 
 				try {
-					int rgb = targetImage.getRGB((int) newX, (int) newY);
-					result.setRGB((int) x, (int) y, rgb);
+					// int rgb = targetImage.getRGB((int) newX, (int) newY);
+					// result.setRGB((int) x, (int) y, rgb);
+					int rgb = targetImage.getRGB((int) x, (int) y);
+					result.setRGB((int) newX, (int) newY, rgb);
 				} catch (Exception ex) {
 					// System.out.println(x+","+y+" -> "+newX+","+newY+" width: "+width+", height: "+height);
 				}
@@ -381,7 +440,7 @@ public class MorphingEngine {
 
 	private List<double[]> calculateSourceTrianglesEdges() {
 		List<double[]> edges = new ArrayList<double[]>();
-		for (DTriangle triangle : triangles) {
+		for (DTriangle triangle : sourceTriangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
 			double x0 = anchorsForTriangle.get(0).getX(0d);
 			double y0 = anchorsForTriangle.get(0).getY(0d);
@@ -398,7 +457,7 @@ public class MorphingEngine {
 
 	private List<double[]> calculateTargetTrianglesEdges() {
 		List<double[]> edges = new ArrayList<double[]>();
-		for (DTriangle triangle : triangles) {
+		for (DTriangle triangle : sourceTriangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
 			double x0 = anchorsForTriangle.get(0).getX(1d);
 			double y0 = anchorsForTriangle.get(0).getY(1d);
@@ -442,9 +501,9 @@ public class MorphingEngine {
 		try {
 			CacheKey key = new CacheKey(triangle, phase);
 			if (!dataCache.containsTargetImageTransformers(key)) {
-				DPoint t1p1 = new DPoint(anchorsForTriangle.get(0).getX(0.0), anchorsForTriangle.get(0).getY(0.0), 0);
-				DPoint t1p2 = new DPoint(anchorsForTriangle.get(1).getX(0.0), anchorsForTriangle.get(1).getY(0.0), 0);
-				DPoint t1p3 = new DPoint(anchorsForTriangle.get(2).getX(0.0), anchorsForTriangle.get(2).getY(0.0), 0);
+				DPoint t1p1 = new DPoint(anchorsForTriangle.get(0).getX(1.0), anchorsForTriangle.get(0).getY(1.0), 0);
+				DPoint t1p2 = new DPoint(anchorsForTriangle.get(1).getX(1.0), anchorsForTriangle.get(1).getY(1.0), 0);
+				DPoint t1p3 = new DPoint(anchorsForTriangle.get(2).getX(1.0), anchorsForTriangle.get(2).getY(1.0), 0);
 
 				DPoint t2p1 = new DPoint(anchorsForTriangle.get(0).getX(phase), anchorsForTriangle.get(0).getY(phase), 0);
 				DPoint t2p2 = new DPoint(anchorsForTriangle.get(1).getX(phase), anchorsForTriangle.get(1).getY(phase), 0);
@@ -459,25 +518,43 @@ public class MorphingEngine {
 
 			return dataCache.getTargetImageTransformers(key);
 		} catch (Exception ex) {
-			throw new RuntimeException(ex);
+			throw new RuntimeException("Failed to get target transformer for triangle: " + ex.getMessage(), ex);
 		}
 	}
 
-	private DTriangle getTriangleForPoint(int x, int y) {
-		if (triangles == null) {
+	private DTriangle getSourceTriangleForPoint(double x, double y) {
+		if (sourceTriangles == null) {
 			return null;
 		}
 		try {
 			DPoint point = new DPoint(x, y, 0);
 
-			for (DTriangle triangle : triangles) {
+			for (DTriangle triangle : sourceTriangles) {
 				if (triangle.isInside(point)) {
 					return triangle;
 				}
 			}
 			return null;
 		} catch (Exception ex) {
-			throw new RuntimeException("Failed to find a triangle for a point " + x + "," + y + ": " + ex.getMessage());
+			throw new RuntimeException("Failed to find source triangle for a point " + x + "," + y + ": " + ex.getMessage());
+		}
+	}
+
+	private DTriangle getTargetTriangleForPoint(double x, double y) {
+		if (targetTriangles == null) {
+			return null;
+		}
+		try {
+			DPoint point = new DPoint(x, y, 0);
+
+			for (DTriangle triangle : targetTriangles) {
+				if (triangle.isInside(point)) {
+					return triangle;
+				}
+			}
+			return null;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to find target triangle for a point " + x + "," + y + ": " + ex.getMessage());
 		}
 	}
 
@@ -490,7 +567,28 @@ public class MorphingEngine {
 					double py = point.getY();
 
 					for (TransformAnchor anchor : project.getAnchors()) {
-						if (anchor.getX(0.0) == px && anchor.getY(0.0) == py) {
+						if (Math.abs(anchor.getX(0.0) - px) < 0.01 && Math.abs(anchor.getY(0.0) - py) < 0.01) {
+							anchorsForTriangle.add(anchor);
+						}
+					}
+				}
+			}
+			dataCache.putAnchorsForTriangle(triangle, anchorsForTriangle);
+		}
+
+		return dataCache.getAnchorsForTriangle(triangle);
+	}
+
+	private List<TransformAnchor> getAnchorsForTargetTriangle(DTriangle triangle) {
+		if (!dataCache.containsAnchorsForTriangle(triangle)) {
+			List<TransformAnchor> anchorsForTriangle = new ArrayList<TransformAnchor>();
+			if (triangle != null) {
+				for (DPoint point : triangle.getPoints()) {
+					double px = point.getX();
+					double py = point.getY();
+
+					for (TransformAnchor anchor : project.getAnchors()) {
+						if (Math.abs(anchor.getX(1.0) - px) < 0.01 && Math.abs(anchor.getY(1.0) - py) < 0.01) {
 							anchorsForTriangle.add(anchor);
 						}
 					}
@@ -509,5 +607,13 @@ public class MorphingEngine {
 	public void setQuality(int sliderValue) {
 		quality = Quality.fromIdx(sliderValue);
 		dataCache.clearAll();
+	}
+
+	public void setSelectedAnchor(TransformAnchor anchor) {
+		this.selectedAnchor = anchor;
+	}
+
+	public TransformAnchor getSelectedAnchor() {
+		return selectedAnchor;
 	}
 }

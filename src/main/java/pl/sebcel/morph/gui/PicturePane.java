@@ -46,6 +46,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 
 	private List<TransformAnchor> anchors;
 	private List<double[]> triangles;
+	private TransformAnchor highlightedAnchor;
 	private TransformAnchor selectedAnchor;
 	private double phase;
 
@@ -117,6 +118,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 
 			triangles = engine.getTriangles(role);
 			anchors = engine.getAnchors();
+			selectedAnchor = engine.getSelectedAnchor();
 		}
 		super.repaint();
 	}
@@ -131,11 +133,18 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 				int y = getY(anchor.getY(phase));
 				g.fillRect(x - 1, y - 1, 2, 2);
 
-				if (anchor == selectedAnchor) {
+				if (anchor == highlightedAnchor) {
 					g.setColor(Color.RED);
-					g.drawArc(getX(selectedAnchor.getX(phase)) - 5, getY(selectedAnchor.getY(phase)) - 5, 10, 10, 0, 359);
+					g.drawArc(getX(highlightedAnchor.getX(phase)) - 5, getY(highlightedAnchor.getY(phase)) - 5, 10, 10, 0, 359);
 				}
 			}
+		}
+
+		if (selectedAnchor != null) {
+			int x = getX(selectedAnchor.getX(phase));
+			int y = getY(selectedAnchor.getY(phase));
+			g.setColor(Color.YELLOW);
+			g.drawOval(x - 6, y - 6, 11, 11);
 		}
 
 		if (triangles != null && showTriangles.isSelected()) {
@@ -163,6 +172,13 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 			anchor.setTargetX(x);
 			anchor.setTargetY(y);
 			engine.addAnchor(anchor);
+			this.repaint();
+		}
+
+		if (SwingUtilities.isRightMouseButton(e)) {
+			TransformAnchor selectedAnchor = findHighlightedAnchor();
+			engine.setSelectedAnchor(selectedAnchor);
+			this.repaint();
 		}
 	}
 
@@ -199,15 +215,15 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 			this.mouseX = getReversedX(e.getX());
 			this.mouseY = getReversedY(e.getY());
 
-			if (selectedAnchor != null) {
+			if (highlightedAnchor != null) {
 				if (phase == 0.0) {
-					selectedAnchor.setOriginalX(this.mouseX);
-					selectedAnchor.setOriginalY(this.mouseY);
+					highlightedAnchor.setOriginalX(this.mouseX);
+					highlightedAnchor.setOriginalY(this.mouseY);
 				}
 
 				if (phase == 1.0) {
-					selectedAnchor.setTargetX(this.mouseX);
-					selectedAnchor.setTargetY(this.mouseY);
+					highlightedAnchor.setTargetX(this.mouseX);
+					highlightedAnchor.setTargetY(this.mouseY);
 				}
 
 				engine.anchorMoved();
@@ -221,31 +237,31 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		this.mouseX = getReversedX(e.getX());
 		this.mouseY = getReversedY(e.getY());
 		this.repaint();
-		TransformAnchor anchor = findSelectedAnchor();
-		mainFrame.setSelectedAnchor(anchor);
+		TransformAnchor anchor = findHighlightedAnchor();
+		mainFrame.setHighlightedAnchor(anchor);
 	}
 
-	public void selectAnchor(TransformAnchor anchor) {
-		this.selectedAnchor = anchor;
+	public void highlightAnchor(TransformAnchor anchor) {
+		this.highlightedAnchor = anchor;
 		this.repaint();
 	}
 
-	private TransformAnchor findSelectedAnchor() {
+	private TransformAnchor findHighlightedAnchor() {
 		if (anchors == null) {
 			return null;
 		}
-		TransformAnchor selectedAnchor = null;
+		TransformAnchor highlightedAnchor = null;
 		for (TransformAnchor anchor : anchors) {
 			int x = getX(anchor.getX(phase));
 			int y = getY(anchor.getY(phase));
 			int mx = getX(mouseX);
 			int my = getY(mouseY);
 			double mouseDistance = Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my));
-			if (mouseDistance < 10 && selectedAnchor == null) {
-				selectedAnchor = anchor;
+			if (mouseDistance < 10 && highlightedAnchor == null) {
+				highlightedAnchor = anchor;
 			}
 		}
-		return selectedAnchor;
+		return highlightedAnchor;
 	}
 
 	private int getX(double x) {

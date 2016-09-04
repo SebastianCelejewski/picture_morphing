@@ -61,7 +61,7 @@ public class RenderingControlsPanel extends JPanel {
 		double phase = (double) sliderValue / phaseSlider.getMaximum();
 		morphingEngine.setPhase(phase);
 	}
-	
+
 	private void setQualitySliderPosition(int sliderValue) {
 		morphingEngine.setQuality(sliderValue);
 	}
