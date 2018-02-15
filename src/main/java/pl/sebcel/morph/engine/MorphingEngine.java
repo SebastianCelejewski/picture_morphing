@@ -207,8 +207,26 @@ public class MorphingEngine {
 				sourceTrianglesEdges = calculateSourceTrianglesEdges();
 				targetTrianglesEdges = calculateTargetTrianglesEdges();
 				currentTrianglesEdges = calculateCurrentTrianglesEdges();
-				sourceTransformedImage = transformSourceImage();
-				targetTransformedImage = transformTargetImage();
+				Thread t1 = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						sourceTransformedImage = transformSourceImage();
+					}
+				});
+				Thread t2 = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						targetTransformedImage = transformTargetImage();
+					}
+				});
+				t1.start();
+				t2.start();
+				try {
+					t1.join();
+					t2.join();
+				} catch (Exception ex) {
+					// intentional
+				}
 				outputImage = blendTransformedImages();
 				dataCache.putImagesForPhase(phase, sourceTransformedImage, targetTransformedImage, outputImage);
 				dataCache.putTrianglesForPhase(phase, sourceTrianglesEdges, targetTrianglesEdges, currentTrianglesEdges);
@@ -282,8 +300,7 @@ public class MorphingEngine {
 				DTriangle triangle = getSourceTriangleForPoint(x, y);
 
 				if (triangle != null) {
-					List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
-					TriangleToTriangleTransformer transformer = getTransformer1ForTriangle(triangle, anchorsForTriangle, phase);
+					TriangleToTriangleTransformer transformer = getTransformer1ForTriangle(triangle, phase);
 					newX = (int) transformer.transformX(x, y);
 					newY = (int) transformer.transformY(x, y);
 				}
@@ -323,35 +340,6 @@ public class MorphingEngine {
 
 		double delta = quality.getDelta();
 
-		if (selectedAnchor != null && 1 == 2) {
-			double sx = selectedAnchor.getX(0);
-			double sy = selectedAnchor.getY(0);
-
-			double cx = selectedAnchor.getX(phase);
-			double cy = selectedAnchor.getY(phase);
-
-			double dx = selectedAnchor.getX(1);
-			double dy = selectedAnchor.getY(1);
-
-			System.out.print(phase + "," + sx + "," + sy + "," + cx + "," + cy + "," + dx + "," + dy);
-
-			try {
-				DPoint point = new DPoint(sx, sy, 0);
-				for (DTriangle triangle : targetTriangles) {
-					if (triangle.isInside(point)) {
-						List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
-						TriangleToTriangleTransformer transformer = getTransformer2ForTriangle(triangle, anchorsForTriangle, phase);
-						int newsx = (int) transformer.transformX(sx, sy);
-						int newsy = (int) transformer.transformY(sx, sy);
-						System.out.print("," + newsx + "," + newsy);
-					}
-				}
-			} catch (Exception ex) {
-				throw new RuntimeException(ex);
-			}
-			System.out.println();
-		}
-
 		for (double x = 0; x < width; x += delta) {
 			for (double y = 0; y < height; y += delta) {
 				double newX = x;
@@ -359,11 +347,7 @@ public class MorphingEngine {
 				DTriangle triangle = getTargetTriangleForPoint(x, y);
 
 				if (triangle != null) {
-					List<TransformAnchor> anchorsForTriangle = getAnchorsForTargetTriangle(triangle);
-					if (anchorsForTriangle.size() != 3) {
-						System.out.println("Warining: Found only " + anchorsForTriangle.size() + " anchors for a triangle.");
-					}
-					TriangleToTriangleTransformer transformer = getTransformer2ForTriangle(triangle, anchorsForTriangle, phase);
+					TriangleToTriangleTransformer transformer = getTransformer2ForTriangle(triangle, phase);
 					newX = (int) transformer.transformX(x, y);
 					newY = (int) transformer.transformY(x, y);
 				}
@@ -381,14 +365,8 @@ public class MorphingEngine {
 					newY = 0;
 				}
 
-				try {
-					// int rgb = targetImage.getRGB((int) newX, (int) newY);
-					// result.setRGB((int) x, (int) y, rgb);
-					int rgb = targetImage.getRGB((int) x, (int) y);
-					result.setRGB((int) newX, (int) newY, rgb);
-				} catch (Exception ex) {
-					// System.out.println(x+","+y+" -> "+newX+","+newY+" width: "+width+", height: "+height);
-				}
+				int rgb = targetImage.getRGB((int) x, (int) y);
+				result.setRGB((int) newX, (int) newY, rgb);
 			}
 		}
 
@@ -500,10 +478,11 @@ public class MorphingEngine {
 		return edges;
 	}
 
-	private TriangleToTriangleTransformer getTransformer1ForTriangle(DTriangle triangle, List<TransformAnchor> anchorsForTriangle, double phase) {
+	private TriangleToTriangleTransformer getTransformer1ForTriangle(DTriangle triangle, double phase) {
 		try {
 			CacheKey key = new CacheKey(triangle, phase);
 			if (!dataCache.containsSourceImageTransformers(key)) {
+				List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
 				DPoint t1p1 = new DPoint(anchorsForTriangle.get(0).getX(0.0), anchorsForTriangle.get(0).getY(0.0), 0);
 				DPoint t1p2 = new DPoint(anchorsForTriangle.get(1).getX(0.0), anchorsForTriangle.get(1).getY(0.0), 0);
 				DPoint t1p3 = new DPoint(anchorsForTriangle.get(2).getX(0.0), anchorsForTriangle.get(2).getY(0.0), 0);
@@ -525,10 +504,11 @@ public class MorphingEngine {
 		}
 	}
 
-	private TriangleToTriangleTransformer getTransformer2ForTriangle(DTriangle triangle, List<TransformAnchor> anchorsForTriangle, double phase) {
+	private TriangleToTriangleTransformer getTransformer2ForTriangle(DTriangle triangle, double phase) {
 		try {
 			CacheKey key = new CacheKey(triangle, phase);
 			if (!dataCache.containsTargetImageTransformers(key)) {
+				List<TransformAnchor> anchorsForTriangle = getAnchorsForTargetTriangle(triangle);
 				DPoint t1p1 = new DPoint(anchorsForTriangle.get(0).getX(1.0), anchorsForTriangle.get(0).getY(1.0), 0);
 				DPoint t1p2 = new DPoint(anchorsForTriangle.get(1).getX(1.0), anchorsForTriangle.get(1).getY(1.0), 0);
 				DPoint t1p3 = new DPoint(anchorsForTriangle.get(2).getX(1.0), anchorsForTriangle.get(2).getY(1.0), 0);

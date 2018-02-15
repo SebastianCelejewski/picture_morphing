@@ -26,8 +26,6 @@ public class MainFrame extends JFrame {
 
 	private RenderingControlsPanel renderingControlsPanel = new RenderingControlsPanel();
 
-	private MorphingEngine engine;
-
 	public MainFrame() {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		Dimension windowSize = new Dimension(1200, 500);
@@ -76,7 +74,6 @@ public class MainFrame extends JFrame {
 	}
 
 	public void setMorphingEngine(MorphingEngine engine) {
-		this.engine = engine;
 		this.sourcePicturePane.setMorphingEngine(engine);
 		this.targetPicturePane.setMorphingEngine(engine);
 		this.sourceTransformPicturePane.setMorphingEngine(engine);

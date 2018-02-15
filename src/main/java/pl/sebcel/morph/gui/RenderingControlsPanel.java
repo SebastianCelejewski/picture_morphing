@@ -1,5 +1,6 @@
 package pl.sebcel.morph.gui;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -42,6 +43,7 @@ public class RenderingControlsPanel extends JPanel {
 		qualitySlider.setValue(0);
 		qualitySlider.setPaintTicks(true);
 		qualitySlider.setPaintLabels(true);
+		qualitySlider.setMinimumSize(new Dimension(50,  10));
 		Dictionary<Integer, JComponent> labels = new Hashtable<>();
 		labels.put(0, new JLabel("Low"));
 		labels.put(1, new JLabel("Medium"));
