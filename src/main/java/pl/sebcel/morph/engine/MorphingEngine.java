@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -197,6 +198,10 @@ public class MorphingEngine {
 				targetTrianglesEdges = dataCache.getTargetTrianglesForPhase(phase);
 				currentTrianglesEdges = dataCache.getCurrentTrianglesForPhase(phase);
 			} else {
+				
+				long startTime = getStartTime();
+				System.out.println("Starting picture morphing for phase " + phase);
+				
 				sourceTriangles = triangulate();
 				targetTriangles = calculateTargetTriangles();
 				sourceTrianglesEdges = calculateSourceTrianglesEdges();
@@ -207,12 +212,15 @@ public class MorphingEngine {
 				outputImage = blendTransformedImages();
 				dataCache.putImagesForPhase(phase, sourceTransformedImage, targetTransformedImage, outputImage);
 				dataCache.putTrianglesForPhase(phase, sourceTrianglesEdges, targetTrianglesEdges, currentTrianglesEdges);
+				
+				System.out.println("Total processing time: " + getDuration(startTime) + " ms");
 			}
 		}
 	}
 
 	private List<DTriangle> calculateTargetTriangles() {
 		try {
+			long startTime = getStartTime();
 			List<DTriangle> result = new ArrayList<>();
 			for (DTriangle sourceTriangle : sourceTriangles) {
 				List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(sourceTriangle);
@@ -225,6 +233,7 @@ public class MorphingEngine {
 				DTriangle targetTriangle = new DTriangle(new DPoint(x0, y0, 0), new DPoint(x1, y1, 0), new DPoint(x2, y2, 0));
 				result.add(targetTriangle);
 			}
+			System.out.println(" - target triangles calculation: " + getDuration(startTime) + " ms");			
 			return result;
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to calculate target triangles from source triangles: " + ex.getMessage(), ex);
@@ -232,6 +241,7 @@ public class MorphingEngine {
 	}
 
 	private List<double[]> calculateCurrentTrianglesEdges() {
+		long startTime = getStartTime();
 		List<double[]> edges = new ArrayList<double[]>();
 		for (DTriangle triangle : sourceTriangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
@@ -246,6 +256,7 @@ public class MorphingEngine {
 			edges.add(new double[] { x1, y1, x2, y2 });
 			edges.add(new double[] { x2, y2, x0, y0 });
 		}
+		System.out.println(" - current triangles calculation: " + getDuration(startTime) + " ms");		
 		return edges;
 	}
 
@@ -253,6 +264,7 @@ public class MorphingEngine {
 		if (sourceImage == null) {
 			return null;
 		}
+		long startTime = getStartTime();
 		int width = sourceImage.getWidth();
 		int height = sourceImage.getHeight();
 		int type = sourceImage.getType();
@@ -260,6 +272,8 @@ public class MorphingEngine {
 		BufferedImage result = new BufferedImage(width, height, type);
 
 		double delta = quality.getDelta();
+		int transformationSteps = (int) ((width / delta ) * (height / delta));
+		System.out.println(" - transformation steps : " + transformationSteps);
 
 		for (double x = 0; x < width; x += delta) {
 			for (double y = 0; y < height; y += delta) {
@@ -292,6 +306,7 @@ public class MorphingEngine {
 			}
 		}
 
+		System.out.println(" - source image transformation time: " + getDuration(startTime) + " ms");
 		return result;
 	}
 
@@ -299,6 +314,7 @@ public class MorphingEngine {
 		if (targetImage == null) {
 			return null;
 		}
+		long startTime = getStartTime();
 		int width = sourceImage.getWidth();
 		int height = sourceImage.getHeight();
 		int type = sourceImage.getType();
@@ -376,6 +392,7 @@ public class MorphingEngine {
 			}
 		}
 
+		System.out.println(" - target image transformation time: " + getDuration(startTime) + " ms");
 		return result;
 	}
 
@@ -383,6 +400,7 @@ public class MorphingEngine {
 		if (sourceImage == null || targetImage == null) {
 			return null;
 		}
+		long startTime = getStartTime();
 		int width = sourceImage.getWidth();
 		int height = sourceImage.getHeight();
 		int type = sourceImage.getType();
@@ -415,6 +433,7 @@ public class MorphingEngine {
 			}
 		}
 
+		System.out.println(" - image blending time: " + getDuration(startTime) + " ms");
 		return result;
 	}
 
@@ -423,6 +442,8 @@ public class MorphingEngine {
 			return new ArrayList<DTriangle>();
 		}
 		try {
+			long startTime = getStartTime();
+			
 			ConstrainedMesh mesh = new ConstrainedMesh();
 			for (TransformAnchor anchor : project.getAnchors()) {
 				double x = anchor.getX(0);
@@ -431,7 +452,10 @@ public class MorphingEngine {
 				mesh.addPoint(point);
 			}
 			mesh.processDelaunay();
-			return mesh.getTriangleList();
+			
+			List<DTriangle> result = mesh.getTriangleList();
+			System.out.println(" - triangulation time: " + getDuration(startTime) + " ms.");			
+			return result;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			return new ArrayList<DTriangle>();
@@ -439,6 +463,7 @@ public class MorphingEngine {
 	}
 
 	private List<double[]> calculateSourceTrianglesEdges() {
+		long startTime = getStartTime();
 		List<double[]> edges = new ArrayList<double[]>();
 		for (DTriangle triangle : sourceTriangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
@@ -452,10 +477,12 @@ public class MorphingEngine {
 			edges.add(new double[] { x1, y1, x2, y2 });
 			edges.add(new double[] { x2, y2, x0, y0 });
 		}
+		System.out.println(" - source triangles calculation time: " + getDuration(startTime) + " ms");
 		return edges;
 	}
 
 	private List<double[]> calculateTargetTrianglesEdges() {
+		long startTime = getStartTime();
 		List<double[]> edges = new ArrayList<double[]>();
 		for (DTriangle triangle : sourceTriangles) {
 			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
@@ -469,6 +496,7 @@ public class MorphingEngine {
 			edges.add(new double[] { x1, y1, x2, y2 });
 			edges.add(new double[] { x2, y2, x0, y0 });
 		}
+		System.out.println(" - target triangles calculation: " + getDuration(startTime) + " ms");
 		return edges;
 	}
 
@@ -615,5 +643,13 @@ public class MorphingEngine {
 
 	public TransformAnchor getSelectedAnchor() {
 		return selectedAnchor;
+	}
+	
+	private long getStartTime() {
+		return new Date().getTime();
+	}
+	
+	private long getDuration(long startTime) {
+		return new Date().getTime() - startTime;
 	}
 }
