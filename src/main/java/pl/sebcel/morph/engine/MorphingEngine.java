@@ -198,39 +198,21 @@ public class MorphingEngine {
 				targetTrianglesEdges = dataCache.getTargetTrianglesForPhase(phase);
 				currentTrianglesEdges = dataCache.getCurrentTrianglesForPhase(phase);
 			} else {
-				
+
 				long startTime = getStartTime();
 				System.out.println("Starting picture morphing for phase " + phase);
-				
+
 				sourceTriangles = triangulate();
 				targetTriangles = calculateTargetTriangles();
 				sourceTrianglesEdges = calculateSourceTrianglesEdges();
 				targetTrianglesEdges = calculateTargetTrianglesEdges();
 				currentTrianglesEdges = calculateCurrentTrianglesEdges();
-				Thread t1 = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						sourceTransformedImage = transformSourceImage();
-					}
-				});
-				Thread t2 = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						targetTransformedImage = transformTargetImage();
-					}
-				});
-				t1.start();
-				t2.start();
-				try {
-					t1.join();
-					t2.join();
-				} catch (Exception ex) {
-					// intentional
-				}
+				sourceTransformedImage = transformSourceImage();
+				targetTransformedImage = transformTargetImage();
 				outputImage = blendTransformedImages();
 				dataCache.putImagesForPhase(phase, sourceTransformedImage, targetTransformedImage, outputImage);
 				dataCache.putTrianglesForPhase(phase, sourceTrianglesEdges, targetTrianglesEdges, currentTrianglesEdges);
-				
+
 				System.out.println("Total processing time: " + getDuration(startTime) + " ms");
 			}
 		}
@@ -251,7 +233,7 @@ public class MorphingEngine {
 				DTriangle targetTriangle = new DTriangle(new DPoint(x0, y0, 0), new DPoint(x1, y1, 0), new DPoint(x2, y2, 0));
 				result.add(targetTriangle);
 			}
-			System.out.println(" - target triangles calculation: " + getDuration(startTime) + " ms");			
+			System.out.println(" - target triangles calculation: " + getDuration(startTime) + " ms");
 			return result;
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to calculate target triangles from source triangles: " + ex.getMessage(), ex);
@@ -274,27 +256,13 @@ public class MorphingEngine {
 			edges.add(new double[] { x1, y1, x2, y2 });
 			edges.add(new double[] { x2, y2, x0, y0 });
 		}
-		System.out.println(" - current triangles calculation: " + getDuration(startTime) + " ms");		
+		System.out.println(" - current triangles calculation: " + getDuration(startTime) + " ms");
 		return edges;
 	}
 
-	private BufferedImage transformSourceImage() {
-		if (sourceImage == null) {
-			return null;
-		}
-		long startTime = getStartTime();
-		int width = sourceImage.getWidth();
-		int height = sourceImage.getHeight();
-		int type = sourceImage.getType();
-
-		BufferedImage result = new BufferedImage(width, height, type);
-
-		double delta = quality.getDelta();
-		int transformationSteps = (int) ((width / delta ) * (height / delta));
-		System.out.println(" - transformation steps : " + transformationSteps);
-
-		for (double x = 0; x < width; x += delta) {
-			for (double y = 0; y < height; y += delta) {
+	private void klumpf(double minX, double maxX, double minY, double maxY, double delta, double width, double height, BufferedImage result) {
+		for (double x = minX; x < maxX; x += delta) {
+			for (double y = minY; y < maxY; y += delta) {
 				double newX = x;
 				double newY = y;
 				DTriangle triangle = getSourceTriangleForPoint(x, y);
@@ -322,13 +290,10 @@ public class MorphingEngine {
 				result.setRGB((int) newX, (int) newY, rgb);
 			}
 		}
-
-		System.out.println(" - source image transformation time: " + getDuration(startTime) + " ms");
-		return result;
 	}
 
-	private BufferedImage transformTargetImage() {
-		if (targetImage == null) {
+	private BufferedImage transformSourceImage() {
+		if (sourceImage == null) {
 			return null;
 		}
 		long startTime = getStartTime();
@@ -339,9 +304,41 @@ public class MorphingEngine {
 		BufferedImage result = new BufferedImage(width, height, type);
 
 		double delta = quality.getDelta();
+		int transformationSteps = (int) ((width / delta) * (height / delta));
+		System.out.println(" - transformation steps : " + transformationSteps);
 
-		for (double x = 0; x < width; x += delta) {
-			for (double y = 0; y < height; y += delta) {
+		int gridXCount = 4;
+		int gridYCount = 4;
+
+		double gridXStep = width / gridXCount;
+		double gridYStep = height / gridYCount;
+
+		List<Thread> workers = new ArrayList<Thread>();
+
+		for (int gx = 0; gx < width; gx += gridXStep) {
+			for (int gy = 0; gy < height; gy += gridYStep) {
+				final int gx1 = gx;
+				final int gy1 = gy;
+				Thread t = new Thread(() -> klumpf(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, delta, width, height, result));
+				workers.add(t);
+				t.start();
+			}
+		}
+
+		try {
+			for (Thread t : workers) {
+				t.join();
+			}
+		} catch (Exception ex) {
+			// intentional
+		}
+		System.out.println(" - source image transformation time: " + getDuration(startTime) + " ms");
+		return result;
+	}
+
+	private void klumpf2(double minX, double maxX, double minY, double maxY, double delta, double width, double height, BufferedImage result) {
+		for (double x = minX; x < maxX; x += delta) {
+			for (double y = minY; y < maxY; y += delta) {
 				double newX = x;
 				double newY = y;
 				DTriangle triangle = getTargetTriangleForPoint(x, y);
@@ -368,6 +365,46 @@ public class MorphingEngine {
 				int rgb = targetImage.getRGB((int) x, (int) y);
 				result.setRGB((int) newX, (int) newY, rgb);
 			}
+		}
+	}
+
+	private BufferedImage transformTargetImage() {
+		if (targetImage == null) {
+			return null;
+		}
+		long startTime = getStartTime();
+		int width = sourceImage.getWidth();
+		int height = sourceImage.getHeight();
+		int type = sourceImage.getType();
+
+		BufferedImage result = new BufferedImage(width, height, type);
+
+		double delta = quality.getDelta();
+
+		int gridXCount = 4;
+		int gridYCount = 4;
+
+		double gridXStep = width / gridXCount;
+		double gridYStep = height / gridYCount;
+
+		List<Thread> workers = new ArrayList<Thread>();
+
+		for (int gx = 0; gx < width; gx += gridXStep) {
+			for (int gy = 0; gy < height; gy += gridYStep) {
+				final int gx1 = gx;
+				final int gy1 = gy;
+				Thread t = new Thread(() -> klumpf2(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, delta, width, height, result));
+				workers.add(t);
+				t.start();
+			}
+		}
+
+		try {
+			for (Thread t : workers) {
+				t.join();
+			}
+		} catch (Exception ex) {
+			// intentional
 		}
 
 		System.out.println(" - target image transformation time: " + getDuration(startTime) + " ms");
@@ -421,7 +458,7 @@ public class MorphingEngine {
 		}
 		try {
 			long startTime = getStartTime();
-			
+
 			ConstrainedMesh mesh = new ConstrainedMesh();
 			for (TransformAnchor anchor : project.getAnchors()) {
 				double x = anchor.getX(0);
@@ -430,9 +467,9 @@ public class MorphingEngine {
 				mesh.addPoint(point);
 			}
 			mesh.processDelaunay();
-			
+
 			List<DTriangle> result = mesh.getTriangleList();
-			System.out.println(" - triangulation time: " + getDuration(startTime) + " ms.");			
+			System.out.println(" - triangulation time: " + getDuration(startTime) + " ms.");
 			return result;
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -624,11 +661,11 @@ public class MorphingEngine {
 	public TransformAnchor getSelectedAnchor() {
 		return selectedAnchor;
 	}
-	
+
 	private long getStartTime() {
 		return new Date().getTime();
 	}
-	
+
 	private long getDuration(long startTime) {
 		return new Date().getTime() - startTime;
 	}
