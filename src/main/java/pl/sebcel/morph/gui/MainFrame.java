@@ -28,7 +28,7 @@ public class MainFrame extends JFrame {
 
 	public MainFrame() {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		Dimension windowSize = new Dimension(1200, 500);
+		Dimension windowSize = new Dimension(1200, 800);
 		this.setBounds((screenSize.width - windowSize.width) / 2, (screenSize.height - windowSize.height) / 2, windowSize.width, windowSize.height);
 		this.setTitle("Picture Morphing");
 
