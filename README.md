@@ -10,8 +10,10 @@ Usage:
 
 2. Load images into the application using Images menu options.
 
-3. Add anchor points using mouse right-clicks and mouse dragging with right mouse button pressed.
+3. Add anchor points using mouse left-clicks and mouse dragging with right mouse button pressed.
 
 4. Use slider to show the results.
 
 5. Use File menu to save and load projects, and to render output jpeg files.
+
+![image](https://github.com/SebastianCelejewski/picture_morphing/raw/master/doc/demo.jpeg)
