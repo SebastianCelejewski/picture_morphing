@@ -9,7 +9,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 
-import pl.sebcel.morph.engine.MorphingEngine;
+import pl.sebcel.morph.ApplicationLogic;
 
 public class RenderingControlsPanel extends JPanel {
 
@@ -18,10 +18,10 @@ public class RenderingControlsPanel extends JPanel {
 	private JButton precalculateButton = new JButton("Precalculate");
 	private JSlider phaseSlider = new JSlider();
 
-	private MorphingEngine morphingEngine;
+	private ApplicationLogic applicationLogic;
 
-	public void setMorphingEngine(MorphingEngine morphingEngine) {
-		this.morphingEngine = morphingEngine;
+	public void setApplicationLogic(ApplicationLogic applicationLogic) {
+		this.applicationLogic = applicationLogic;
 	}
 
 	public RenderingControlsPanel() {
@@ -41,7 +41,7 @@ public class RenderingControlsPanel extends JPanel {
 
 	private void setPhaseSliderPosition(int sliderValue) {
 		double phase = (double) sliderValue / phaseSlider.getMaximum();
-		morphingEngine.setPhase(phase);
+		applicationLogic.setPhase(phase);
 	}
 
 	private void bufferAllFrames() {

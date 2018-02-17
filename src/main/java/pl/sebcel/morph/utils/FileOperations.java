@@ -1,7 +1,9 @@
 package pl.sebcel.morph.utils;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 
+import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -34,6 +36,17 @@ public class FileOperations {
             throw new RuntimeException("Failed to load file: " + ex.getMessage(), ex);
         }
     }
+
+    public BufferedImage loadImage(String path) {
+		if (path == null) {
+			return null;
+		}
+		try {
+			return ImageIO.read(new File(path));
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to load image from file " + path + ": " + ex.getMessage(), ex);
+		}
+	}
 
     private Exception getJAXBLinkedExceptionIfPresent(Exception ex) {
         if (ex instanceof JAXBException) {

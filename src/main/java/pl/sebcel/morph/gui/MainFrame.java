@@ -10,7 +10,7 @@ import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
 
-import pl.sebcel.morph.engine.MorphingEngine;
+import pl.sebcel.morph.ApplicationLogic;
 import pl.sebcel.morph.gui.PicturePane.Role;
 import pl.sebcel.morph.model.TransformAnchor;
 
@@ -73,13 +73,13 @@ public class MainFrame extends JFrame {
 		this.setJMenuBar(mainMenu);
 	}
 
-	public void setMorphingEngine(MorphingEngine engine) {
-		this.sourcePicturePane.setMorphingEngine(engine);
-		this.targetPicturePane.setMorphingEngine(engine);
-		this.sourceTransformPicturePane.setMorphingEngine(engine);
-		this.targetTransformPicturePane.setMorphingEngine(engine);
-		this.outputPicturePane.setMorphingEngine(engine);
-		this.renderingControlsPanel.setMorphingEngine(engine);
+	public void setApplicationLogic(ApplicationLogic applicationLogic) {
+		this.sourcePicturePane.setApplicationLogic(applicationLogic);
+		this.targetPicturePane.setApplicationLogic(applicationLogic);
+		this.sourceTransformPicturePane.setApplicationLogic(applicationLogic);
+		this.targetTransformPicturePane.setApplicationLogic(applicationLogic);
+		this.outputPicturePane.setApplicationLogic(applicationLogic);
+		this.renderingControlsPanel.setApplicationLogic(applicationLogic);
 	}
 
 	@Override

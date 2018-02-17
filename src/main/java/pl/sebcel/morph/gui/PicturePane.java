@@ -19,7 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import pl.sebcel.morph.engine.MorphingEngine;
+import pl.sebcel.morph.ApplicationLogic;
 import pl.sebcel.morph.model.TransformAnchor;
 
 public class PicturePane extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
@@ -36,7 +36,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 	private int panY = 0;
 
 	private Role role;
-	private MorphingEngine engine;
+	private ApplicationLogic applicationLogic;
 	private MainFrame mainFrame;
 
 	private double mouseX = 0;
@@ -77,8 +77,8 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		this.mainFrame = mainFrame;
 	}
 
-	public void setMorphingEngine(MorphingEngine engine) {
-		this.engine = engine;
+	public void setApplicationLogic(ApplicationLogic applicationLogic) {
+		this.applicationLogic = applicationLogic;
 	}
 
 	public void setShowAnchors(boolean showAnchors) {
@@ -87,12 +87,12 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 
 	@Override
 	public void repaint() {
-		if (engine != null) {
+		if (applicationLogic != null) {
 			if (role == Role.OUTPUT || role == Role.SOURCE_TRANSFORMED || role == Role.TARGET_TRANSFORMED) {
-				this.phase = engine.getPhase();
+				this.phase = applicationLogic.getPhase();
 			}
 
-			BufferedImage image = engine.getImage(role);
+			BufferedImage image = applicationLogic.getImage(role);
 
 			if (image != null) {
 				int width = getX(image.getWidth());
@@ -106,7 +106,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 				int y = (int) (panY * zoom);
 				int w = (int) (width - panX * zoom);
 				int h = (int) (height - panY * zoom);
-				g2.drawImage(engine.getImage(role), x, y, w, h, null);
+				g2.drawImage(applicationLogic.getImage(role), x, y, w, h, null);
 				g2.dispose();
 
 				pictureLabel.setIcon(new ImageIcon(resizedImg));
@@ -116,9 +116,8 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 				pictureLabel.setText("No image loaded yet");
 			}
 
-			triangles = engine.getTriangles(role);
-			anchors = engine.getAnchors();
-			selectedAnchor = engine.getSelectedAnchor();
+//			triangles = engine.getTriangles(role);
+			anchors = applicationLogic.getAnchors();
 		}
 		super.repaint();
 	}
@@ -171,13 +170,13 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 			anchor.setOriginalY(y);
 			anchor.setTargetX(x);
 			anchor.setTargetY(y);
-			engine.addAnchor(anchor);
+			applicationLogic.addAnchor(anchor);
 			this.repaint();
 		}
 
 		if (SwingUtilities.isRightMouseButton(e)) {
-			TransformAnchor selectedAnchor = findHighlightedAnchor();
-			engine.setSelectedAnchor(selectedAnchor);
+//			TransformAnchor selectedAnchor = findHighlightedAnchor();
+//			applicationLogic.setSelectedAnchor(selectedAnchor);
 			this.repaint();
 		}
 	}
@@ -226,7 +225,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 					highlightedAnchor.setTargetY(this.mouseY);
 				}
 
-				engine.anchorMoved();
+//				applicationLogic.anchorMoved();
 			}
 
 			this.repaint();

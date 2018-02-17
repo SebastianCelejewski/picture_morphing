@@ -1,17 +1,14 @@
 package pl.sebcel.morph.gui;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.text.DecimalFormat;
 
-import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
-import pl.sebcel.morph.engine.MorphingEngine;
-import pl.sebcel.morph.gui.PicturePane.Role;
+import pl.sebcel.morph.ApplicationLogic;
 import pl.sebcel.morph.model.TransformData;
 import pl.sebcel.morph.utils.FileOperations;
 
@@ -19,7 +16,7 @@ public class MainMenu extends JMenuBar {
 
 	private static final long serialVersionUID = 1L;
 
-	private MorphingEngine engine;
+	private ApplicationLogic applicationLogic;
 	private FileOperations fileOperations;
 
 	private JMenu menuFile = new JMenu("File");
@@ -40,12 +37,12 @@ public class MainMenu extends JMenuBar {
 
 	private File currentFile = null;
 
-	public void setMorphingEngine(MorphingEngine engine) {
-		this.engine = engine;
-	}
-
 	public void setFileOperations(FileOperations fileOperations) {
 		this.fileOperations = fileOperations;
+	}
+	
+	public void setApplicationLogic(ApplicationLogic applicationLogic) {
+		this.applicationLogic = applicationLogic;
 	}
 
 	public MainMenu() {
@@ -78,8 +75,7 @@ public class MainMenu extends JMenuBar {
 	}
 
 	private void newProject() {
-		TransformData project = new TransformData();
-		engine.setProject(project);
+		applicationLogic.createNewProject();
 		currentFile = null;
 	}
 
@@ -88,7 +84,7 @@ public class MainMenu extends JMenuBar {
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
 			TransformData project = fileOperations.loadProject(file);
-			engine.setProject(project);
+			applicationLogic.setProject(project);
 			currentFile = file;
 		}
 	}
@@ -98,7 +94,7 @@ public class MainMenu extends JMenuBar {
 			saveProjectAs();
 			return;
 		}
-		TransformData project = engine.getProject();
+		TransformData project = applicationLogic.getProject();
 		fileOperations.saveProject(currentFile, project);
 	}
 
@@ -106,7 +102,7 @@ public class MainMenu extends JMenuBar {
 		JFileChooser fc = new JFileChooser();
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
-			TransformData project = engine.getProject();
+			TransformData project = applicationLogic.getProject();
 			fileOperations.saveProject(file, project);
 			currentFile = file;
 		}
@@ -120,9 +116,9 @@ public class MainMenu extends JMenuBar {
 				for (double phase = 0.0; phase < 1.0; phase += 1d / 30) {
 					String filename = currentFile.getName() + "-export-" + df.format(idx++) + ".jpg";
 					System.out.println(filename);
-					engine.setPhase(phase);
-					BufferedImage image = engine.getImage(Role.OUTPUT);
-					ImageIO.write(image, "jpg", new File(filename));
+//					engine.setPhase(phase);
+//					BufferedImage image = engine.getImage(Role.OUTPUT);
+//					ImageIO.write(image, "jpg", new File(filename));
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -131,7 +127,7 @@ public class MainMenu extends JMenuBar {
 	}
 
 	private void close() {
-		engine.setProject(null);
+		applicationLogic.closeProject();
 		currentFile = null;
 	}
 
@@ -143,7 +139,7 @@ public class MainMenu extends JMenuBar {
 		JFileChooser fc = new JFileChooser();
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
-			engine.setSourceImage(file);
+			applicationLogic.setSourceImage(file);
 		}
 	}
 
@@ -151,7 +147,7 @@ public class MainMenu extends JMenuBar {
 		JFileChooser fc = new JFileChooser();
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
-			engine.setTargetImage(file);
+			applicationLogic.setTargetImage(file);
 		}
 	}
 }

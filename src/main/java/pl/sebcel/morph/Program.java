@@ -12,19 +12,21 @@ public class Program {
     }
 
     public void run() {
-
-        MorphingEngine engine = new MorphingEngine();
+        MorphingEngine morphingEngine = new MorphingEngine();
         FileOperations fileOperations = new FileOperations();
-
+        ApplicationLogic applicationLogic = new ApplicationLogic();
         MainMenu mainMenu = new MainMenu();
-        mainMenu.setMorphingEngine(engine);
-        mainMenu.setFileOperations(fileOperations);
-
         MainFrame mainFrame = new MainFrame();
-        mainFrame.setMorphingEngine(engine);
+
+        mainMenu.setFileOperations(fileOperations);
+        mainMenu.setApplicationLogic(applicationLogic);
+
+        mainFrame.setApplicationLogic(applicationLogic);
         mainFrame.setMainMenu(mainMenu);
         mainFrame.setVisible(true);
 
-        engine.setMainFrame(mainFrame);
+        applicationLogic.setMainFrame(mainFrame);
+        applicationLogic.setMorphingEngine(morphingEngine);
+        applicationLogic.setFileOperations(fileOperations);
     }
 }
