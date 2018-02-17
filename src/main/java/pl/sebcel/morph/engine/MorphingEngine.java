@@ -22,31 +22,6 @@ import pl.sebcel.morph.model.TriangleToTriangleTransformer;
 
 public class MorphingEngine {
 
-	public enum Quality {
-		LOW(0, 1.0), MEDIUM(1, 0.5), HIGH(2, 0.25);
-
-		private int idx;
-		private double delta;
-
-		Quality(int idx, double delta) {
-			this.idx = idx;
-			this.delta = delta;
-		}
-
-		public static Quality fromIdx(int idx) {
-			for (Quality value : Quality.values()) {
-				if (value.idx == idx) {
-					return value;
-				}
-			}
-			throw new IllegalArgumentException("Invalid idx: " + idx);
-		}
-
-		public double getDelta() {
-			return delta;
-		}
-	}
-
 	private BufferedImage sourceImage;
 
 	private BufferedImage targetImage;
@@ -61,8 +36,6 @@ public class MorphingEngine {
 
 	private List<DTriangle> currentTriangles;
 
-	private List<DTriangle> targetTriangles;
-
 	private List<double[]> sourceTrianglesEdges;
 
 	private List<double[]> targetTrianglesEdges;
@@ -72,8 +45,6 @@ public class MorphingEngine {
 	private DataCache dataCache = new DataCache();
 
 	private double phase;
-
-	private Quality quality = Quality.LOW;
 
 	private MainFrame mainFrame;
 
@@ -206,7 +177,6 @@ public class MorphingEngine {
 
 				sourceTriangles = triangulate();
 				currentTriangles = calculateCurrentTriangles();
-				targetTriangles = calculateTargetTriangles();
 				sourceTrianglesEdges = calculateSourceTrianglesEdges();
 				targetTrianglesEdges = calculateTargetTrianglesEdges();
 				currentTrianglesEdges = calculateCurrentTrianglesEdges();
@@ -268,32 +238,6 @@ public class MorphingEngine {
 		}
 	}	
 
-	private List<DTriangle> calculateTargetTriangles() {
-		try {
-			long startTime = getStartTime();
-			List<DTriangle> result = new ArrayList<>();
-			for (DTriangle sourceTriangle : sourceTriangles) {
-				List<TransformAnchor> anchorsForTriangle = getAnchorsForSourceTriangle(sourceTriangle);
-				double x0 = anchorsForTriangle.get(0).getX(1.0);
-				double y0 = anchorsForTriangle.get(0).getY(1.0);
-				double x1 = anchorsForTriangle.get(1).getX(1.0);
-				double y1 = anchorsForTriangle.get(1).getY(1.0);
-				double x2 = anchorsForTriangle.get(2).getX(1.0);
-				double y2 = anchorsForTriangle.get(2).getY(1.0);
-				DTriangle targetTriangle = new DTriangle(new DPoint(x0, y0, 0), new DPoint(x1, y1, 0), new DPoint(x2, y2, 0));
-				result.add(targetTriangle);
-			}
-			System.out.println(" - target triangles calculation: " + getDuration(startTime) + " ms");
-			return result;
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to calculate target triangles from source triangles: " + ex.getMessage(), ex);
-		}
-	}
-	
-	
-
-	
-
 	private BufferedImage transformSourceImage() {
 		if (sourceImage == null) {
 			return null;
@@ -305,8 +249,7 @@ public class MorphingEngine {
 
 		BufferedImage result = new BufferedImage(width, height, type);
 
-		double delta = quality.getDelta();
-		int transformationSteps = (int) ((width / delta) * (height / delta));
+		int transformationSteps = width * height;
 		System.out.println(" - transformation steps : " + transformationSteps);
 
 		int gridXCount = 4;
@@ -321,7 +264,7 @@ public class MorphingEngine {
 			for (int gy = 0; gy < height; gy += gridYStep) {
 				final int gx1 = gx;
 				final int gy1 = gy;
-				Thread t = new Thread(() -> klumpf(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, delta, width, height, result));
+				Thread t = new Thread(() -> klumpf(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, width, height, result));
 				workers.add(t);
 				t.start();
 			}
@@ -349,8 +292,6 @@ public class MorphingEngine {
 
 		BufferedImage result = new BufferedImage(width, height, type);
 
-		double delta = quality.getDelta();
-
 		int gridXCount = 4;
 		int gridYCount = 4;
 
@@ -363,7 +304,7 @@ public class MorphingEngine {
 			for (int gy = 0; gy < height; gy += gridYStep) {
 				final int gx1 = gx;
 				final int gy1 = gy;
-				Thread t = new Thread(() -> klumpf2(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, delta, width, height, result));
+				Thread t = new Thread(() -> klumpf2(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, width, height, result));
 				workers.add(t);
 				t.start();
 			}
@@ -381,9 +322,9 @@ public class MorphingEngine {
 		return result;
 	}
 	
-	private void klumpf(double minX, double maxX, double minY, double maxY, double delta, double width, double height, BufferedImage result) {
-		for (double x = minX; x < maxX; x += delta) {
-			for (double y = minY; y < maxY; y += delta) {
+	private void klumpf(double minX, double maxX, double minY, double maxY, double width, double height, BufferedImage result) {
+		for (double x = minX; x < maxX; x += 1) {
+			for (double y = minY; y < maxY; y += 1) {
 				double newX = x;
 				double newY = y;
 				DTriangle triangle = getCurrentTriangleForPoint(x, y);
@@ -413,9 +354,9 @@ public class MorphingEngine {
 		}
 	}	
 
-	private void klumpf2(double minX, double maxX, double minY, double maxY, double delta, double width, double height, BufferedImage result) {
-		for (double x = minX; x < maxX; x += delta) {
-			for (double y = minY; y < maxY; y += delta) {
+	private void klumpf2(double minX, double maxX, double minY, double maxY, double width, double height, BufferedImage result) {
+		for (double x = minX; x < maxX; x += 1) {
+			for (double y = minY; y < maxY; y += 1) {
 				double newX = x;
 				double newY = y;
 				DTriangle triangle = getCurrentTriangleForPoint(x, y);
@@ -595,24 +536,6 @@ public class MorphingEngine {
 		}
 	}
 
-	private DTriangle getSourceTriangleForPoint(double x, double y) {
-		if (sourceTriangles == null) {
-			return null;
-		}
-		try {
-			DPoint point = new DPoint(x, y, 0);
-
-			for (DTriangle triangle : sourceTriangles) {
-				if (triangle.isInside(point)) {
-					return triangle;
-				}
-			}
-			return null;
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to find source triangle for a point " + x + "," + y + ": " + ex.getMessage());
-		}
-	}
-
 	private DTriangle getCurrentTriangleForPoint(double x, double y) {
 		if (currentTriangles == null) {
 			return null;
@@ -630,25 +553,6 @@ public class MorphingEngine {
 			throw new RuntimeException("Failed to find current triangle for a point " + x + "," + y + ": " + ex.getMessage());
 		}
 	}
-	
-	private DTriangle getTargetTriangleForPoint(double x, double y) {
-		if (targetTriangles == null) {
-			return null;
-		}
-		try {
-			DPoint point = new DPoint(x, y, 0);
-
-			for (DTriangle triangle : targetTriangles) {
-				if (triangle.isInside(point)) {
-					return triangle;
-				}
-			}
-			return null;
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to find target triangle for a point " + x + "," + y + ": " + ex.getMessage());
-		}
-	}
-
 	
 	private List<TransformAnchor> getAnchorsForSourceTriangle(DTriangle triangle) {
 		if (!dataCache.containsAnchorsForTriangle(triangle)) {
@@ -691,34 +595,9 @@ public class MorphingEngine {
 
 		return dataCache.getAnchorsForTriangle(triangle);
 	}		
-	private List<TransformAnchor> getAnchorsForTargetTriangle(DTriangle triangle) {
-		if (!dataCache.containsAnchorsForTriangle(triangle)) {
-			List<TransformAnchor> anchorsForTriangle = new ArrayList<TransformAnchor>();
-			if (triangle != null) {
-				for (DPoint point : triangle.getPoints()) {
-					double px = point.getX();
-					double py = point.getY();
-
-					for (TransformAnchor anchor : project.getAnchors()) {
-						if (Math.abs(anchor.getX(1.0) - px) < 0.01 && Math.abs(anchor.getY(1.0) - py) < 0.01) {
-							anchorsForTriangle.add(anchor);
-						}
-					}
-				}
-			}
-			dataCache.putAnchorsForTriangle(triangle, anchorsForTriangle);
-		}
-
-		return dataCache.getAnchorsForTriangle(triangle);
-	}
 
 	public TransformData getProject() {
 		return project;
-	}
-
-	public void setQuality(int sliderValue) {
-		quality = Quality.fromIdx(sliderValue);
-		dataCache.clearAll();
 	}
 
 	public void setSelectedAnchor(TransformAnchor anchor) {
