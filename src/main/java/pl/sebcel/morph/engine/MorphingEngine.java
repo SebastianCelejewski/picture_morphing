@@ -240,26 +240,6 @@ public class MorphingEngine {
 		}
 	}
 
-	private List<double[]> calculateCurrentTrianglesEdges() {
-		long startTime = getStartTime();
-		List<double[]> edges = new ArrayList<double[]>();
-		for (DTriangle triangle : sourceTriangles) {
-			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
-			double x0 = anchorsForTriangle.get(0).getX(phase);
-			double y0 = anchorsForTriangle.get(0).getY(phase);
-			double x1 = anchorsForTriangle.get(1).getX(phase);
-			double y1 = anchorsForTriangle.get(1).getY(phase);
-			double x2 = anchorsForTriangle.get(2).getX(phase);
-			double y2 = anchorsForTriangle.get(2).getY(phase);
-
-			edges.add(new double[] { x0, y0, x1, y1 });
-			edges.add(new double[] { x1, y1, x2, y2 });
-			edges.add(new double[] { x2, y2, x0, y0 });
-		}
-		System.out.println(" - current triangles calculation: " + getDuration(startTime) + " ms");
-		return edges;
-	}
-
 	private void klumpf(double minX, double maxX, double minY, double maxY, double delta, double width, double height, BufferedImage result) {
 		for (double x = minX; x < maxX; x += delta) {
 			for (double y = minY; y < maxY; y += delta) {
@@ -515,6 +495,26 @@ public class MorphingEngine {
 		return edges;
 	}
 
+	private List<double[]> calculateCurrentTrianglesEdges() {
+		long startTime = getStartTime();
+		List<double[]> edges = new ArrayList<double[]>();
+		for (DTriangle triangle : sourceTriangles) {
+			List<TransformAnchor> anchorsForTriangle = getAnchorsForTriangle(triangle);
+			double x0 = anchorsForTriangle.get(0).getX(phase);
+			double y0 = anchorsForTriangle.get(0).getY(phase);
+			double x1 = anchorsForTriangle.get(1).getX(phase);
+			double y1 = anchorsForTriangle.get(1).getY(phase);
+			double x2 = anchorsForTriangle.get(2).getX(phase);
+			double y2 = anchorsForTriangle.get(2).getY(phase);
+
+			edges.add(new double[] { x0, y0, x1, y1 });
+			edges.add(new double[] { x1, y1, x2, y2 });
+			edges.add(new double[] { x2, y2, x0, y0 });
+		}
+		System.out.println(" - current triangles calculation: " + getDuration(startTime) + " ms");
+		return edges;
+	}
+	
 	private TriangleToTriangleTransformer getTransformer1ForTriangle(DTriangle triangle, double phase) {
 		try {
 			CacheKey key = new CacheKey(triangle, phase);
