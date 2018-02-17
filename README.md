@@ -2,7 +2,7 @@
 
 Creates a morphing effect between two images
 
-![image](https://github.com/SebastianCelejewski/picture_morphing/raw/master/doc/screenshot.png)
+![image](https://github.com/SebastianCelejewski/picture_morphing/raw/master/doc/screenshot.jpeg)
 
 Usage:
 
