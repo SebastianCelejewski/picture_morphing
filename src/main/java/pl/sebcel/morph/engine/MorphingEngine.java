@@ -264,7 +264,7 @@ public class MorphingEngine {
 			for (int gy = 0; gy < height; gy += gridYStep) {
 				final int gx1 = gx;
 				final int gy1 = gy;
-				Thread t = new Thread(() -> klumpf(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, width, height, result));
+				Thread t = new Thread(() -> klumpf(gx1, Math.min(gx1 + gridXStep, width), gy1, Math.min(gy1 + gridYStep, height), width, height, result));
 				workers.add(t);
 				t.start();
 			}
@@ -304,7 +304,7 @@ public class MorphingEngine {
 			for (int gy = 0; gy < height; gy += gridYStep) {
 				final int gx1 = gx;
 				final int gy1 = gy;
-				Thread t = new Thread(() -> klumpf2(gx1, gx1 + gridXStep, gy1, gy1 + gridYStep, width, height, result));
+				Thread t = new Thread(() -> klumpf2(gx1, Math.min(gx1 + gridXStep, width), gy1, Math.min(gy1 + gridYStep, height), width, height, result));
 				workers.add(t);
 				t.start();
 			}
