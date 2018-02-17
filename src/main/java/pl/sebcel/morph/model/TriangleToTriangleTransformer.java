@@ -7,7 +7,7 @@ public class TriangleToTriangleTransformer {
     private double a11, a12, a21, a22, dx, dy;
 
     // [ x1 ] = [ a11 a12 ] [ x ] + [dx]
-    // [ y1 ] [ a21 a22 ] [ y ] [dy]
+    // [ y1 ] [ a21 a22 ] [ y ] + [dy]
 
     public TriangleToTriangleTransformer(DTriangle t1, DTriangle t2) {
         double ax = t1.getPoint(0).getX();
