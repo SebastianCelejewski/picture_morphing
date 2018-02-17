@@ -1,5 +1,7 @@
 package pl.sebcel.morph.model;
 
+import java.awt.Point;
+
 import org.jdelaunay.delaunay.geometries.DTriangle;
 
 public class TriangleToTriangleTransformer {
@@ -43,5 +45,13 @@ public class TriangleToTriangleTransformer {
 
     public double transformY(double x, double y) {
         return a21 * x + a22 * y + dy;
+    }
+    
+    public Point transform(Point point) {
+    	double x = point.getX();
+    	double y = point.getY();
+    	double x1 = transformX(x, y);
+    	double y1 = transformY(x, y);
+    	return new Point((int) x1, (int) y1);
     }
 }
