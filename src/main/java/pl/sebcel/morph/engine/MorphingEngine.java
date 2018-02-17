@@ -2,7 +2,6 @@ package pl.sebcel.morph.engine;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.Date;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -167,17 +166,11 @@ public class MorphingEngine {
 				targetTrianglesEdges = dataCache.getTargetTrianglesForPhase(phase);
 				currentTrianglesEdges = dataCache.getCurrentTrianglesForPhase(phase);
 			} else {
-
-				long startTime = getStartTime();
-				System.out.println("Starting picture morphing for phase " + phase);
-
 				List<TransformationTriangle> triangles = triangulationUtils.triangulate(project.getAnchors());
 				sourceTransformedImage = transformationEngine.transformImage(sourceImage, triangles, 0, phase);
 				targetTransformedImage = transformationEngine.transformImage(targetImage, triangles, 1, phase);
 				outputImage = blendingEngine.blendTransformedImages(sourceTransformedImage, targetTransformedImage, phase);
 				dataCache.putImagesForPhase(phase, sourceTransformedImage, targetTransformedImage, outputImage);
-
-				System.out.println("Total processing time: " + getDuration(startTime) + " ms");
 			}
 		}
 	}
@@ -192,13 +185,5 @@ public class MorphingEngine {
 
 	public TransformAnchor getSelectedAnchor() {
 		return selectedAnchor;
-	}
-
-	private long getStartTime() {
-		return new Date().getTime();
-	}
-
-	private long getDuration(long startTime) {
-		return new Date().getTime() - startTime;
 	}
 }
