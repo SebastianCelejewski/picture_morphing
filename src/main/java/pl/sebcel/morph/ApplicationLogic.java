@@ -119,4 +119,8 @@ public class ApplicationLogic {
 		}
 		return null;
 	}
+
+	public void anchorMoved() {
+		morphingEngine.invalidateCache();		
+	}
 }

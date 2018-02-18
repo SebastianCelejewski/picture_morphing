@@ -35,6 +35,9 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 	private int panX = 0;
 	private int panY = 0;
 
+	private int mx = 0;
+	private int my = 0;
+
 	private Role role;
 	private ApplicationLogic applicationLogic;
 	private MainFrame mainFrame;
@@ -116,7 +119,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 				pictureLabel.setText("No image loaded yet");
 			}
 
-//			triangles = engine.getTriangles(role);
+			// triangles = engine.getTriangles(role);
 			anchors = applicationLogic.getAnchors();
 		}
 		super.repaint();
@@ -175,8 +178,8 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		}
 
 		if (SwingUtilities.isRightMouseButton(e)) {
-//			TransformAnchor selectedAnchor = findHighlightedAnchor();
-//			applicationLogic.setSelectedAnchor(selectedAnchor);
+			// TransformAnchor selectedAnchor = findHighlightedAnchor();
+			// applicationLogic.setSelectedAnchor(selectedAnchor);
 			this.repaint();
 		}
 	}
@@ -196,9 +199,6 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 		mx = 0;
 		my = 0;
 	}
-
-	private int mx = 0;
-	private int my = 0;
 
 	public void mouseDragged(MouseEvent e) {
 		if (SwingUtilities.isRightMouseButton(e) && mx != 0 && my != 0) {
@@ -225,7 +225,7 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 					highlightedAnchor.setTargetY(this.mouseY);
 				}
 
-//				applicationLogic.anchorMoved();
+				applicationLogic.anchorMoved();
 			}
 
 			this.repaint();
@@ -282,17 +282,22 @@ public class PicturePane extends JPanel implements MouseListener, MouseMotionLis
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		double rotation = e.getPreciseWheelRotation();
+		double mouseX = e.getX();
+		double mouseY = e.getY();
+		double beta = 1;
 		if (rotation < 0) {
 			if (zoom < 4) {
-				zoom = zoom * 2;
-				this.repaint();
+				beta = 2;
 			}
 		}
 		if (rotation > 0) {
 			if (zoom > 0.125) {
-				zoom = zoom / 2;
-				this.repaint();
+				beta = 0.5;
 			}
 		}
+		panX = (int) (mouseX * (1 - beta) / (zoom * beta) + panX);
+		panY = (int) (mouseY * (1 - beta) / (zoom * beta) + panY);
+		zoom = zoom * beta;
+		this.repaint();
 	}
 }
