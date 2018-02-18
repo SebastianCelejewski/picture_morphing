@@ -22,7 +22,7 @@ public class ApplicationLogic {
 
 	private TransformData project;
 
-	private ImageSet imageSet;
+	private ImageSet imageSet = new ImageSet();
 
 	private double currentPhase = 0.5;
 
@@ -42,11 +42,13 @@ public class ApplicationLogic {
 		this.project = new TransformData();
 		this.imageSet = new ImageSet();
 		this.currentPhase = 0.5;
+		this.morphingEngine.invalidateCache();
 	}
 
 	public void setProject(TransformData project) {
 		this.project = project;
 		this.imageSet = new ImageSet();
+		this.morphingEngine.invalidateCache();
 		imageSet.setSourceImage(fileOperations.loadImage(project.getSourceImagePath()));
 		imageSet.setTargetImage(fileOperations.loadImage(project.getTargetImagePath()));
 		this.currentPhase = 0.5;
@@ -88,6 +90,7 @@ public class ApplicationLogic {
 
 	public void addAnchor(TransformAnchor anchor) {
 		project.getAnchors().add(anchor);
+		morphingEngine.invalidateCache();
 		mainFrame.repaint();
 	}
 
